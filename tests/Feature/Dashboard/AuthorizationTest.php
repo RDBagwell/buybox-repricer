@@ -17,6 +17,7 @@ dataset('mutations', [
     'pause' => ['post', '/api/products/{id}/pause', []],
     'resume' => ['post', '/api/products/{id}/resume', ['acknowledge' => true]],
     'rule' => ['put', '/api/products/{id}/rule', ['strategy' => 'beat_buybox', 'offset' => 10, 'floor' => 2699, 'ceiling' => 3499, 'min_margin' => 300, 'max_step_pct' => 5, 'cooldown_sec' => 120]],
+    'rule preview' => ['post', '/api/products/{id}/rule/preview', ['strategy' => 'beat_buybox', 'offset' => 10, 'floor' => 2699, 'ceiling' => 3499, 'min_margin' => 300, 'max_step_pct' => 5, 'cooldown_sec' => 120]],
     'speed' => ['post', '/api/simulator/speed', ['speed' => 10]],
     'running' => ['post', '/api/simulator/running', ['running' => false]],
     'faults' => ['post', '/api/simulator/faults', ['http_429_bps' => 100, 'http_503_bps' => 100]],

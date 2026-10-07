@@ -4,12 +4,9 @@ namespace App\Repricer\Pricing;
 
 use App\Repricer\Jobs\RepriceJob;
 use App\Repricer\Market\MarketAdapter;
-use App\Repricer\Market\MarketOffer;
 use App\Repricer\Market\OfferChangeNotification;
-use App\Repricer\Models\OfferSnapshot;
 use App\Repricer\Models\PriceDecision;
 use App\Repricer\Models\Product;
-use App\Support\Fulfillment;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -87,29 +84,6 @@ final class CooldownSweeper
 
     private function notificationFrom(PriceDecision $decision, Product $product): OfferChangeNotification
     {
-        $offers = $decision->snapshots()->orderBy('id')->get()->map(fn (OfferSnapshot $s) => new MarketOffer(
-            $s->seller, $s->price, $s->shipping, Fulfillment::from($s->fulfillment), $s->rating, $s->handling_days, $s->is_buybox,
-        ))->all();
-
-        $lowest = ['overall' => null, 'marketplace' => null, 'merchant' => null];
-        $buyBox = null;
-        foreach ($offers as $o) {
-            $landed = $o->landed()->cents;
-            $lowest['overall'] = min($lowest['overall'] ?? $landed, $landed);
-            $lowest[$o->fulfillment->value] = min($lowest[$o->fulfillment->value] ?? $landed, $landed);
-            $buyBox = $o->isBuyBoxWinner ? $o : $buyBox;
-        }
-
-        return new OfferChangeNotification(
-            notificationId: $decision->event_id.self::SUFFIX,
-            asin: $product->asin,
-            eventTime: $decision->event_time,
-            offers: array_values($offers),
-            lowestLanded: $lowest,
-            buyBoxSellerId: $buyBox?->sellerId,
-            buyBoxLanded: $buyBox?->landed(),
-            triggerSellerId: 'cooldown-recheck',
-            changeType: self::CHANGE_TYPE,
-        );
+        return DecisionSnapshot::toNotification($decision, $product, $decision->event_id.self::SUFFIX, self::CHANGE_TYPE, 'cooldown-recheck');
     }
 }

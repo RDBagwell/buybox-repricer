@@ -715,6 +715,20 @@ export function Dashboard({
             <RuleEditor
                 product={editing}
                 onClose={() => setEditing(null)}
+                onPreview={
+                    actions
+                        ? async (p, payload) => {
+                              const r = await actions.previewRule(
+                                  p.id,
+                                  payload,
+                              );
+
+                              return r.ok
+                                  ? r.data.preview
+                                  : { available: false, message: r.message };
+                          }
+                        : undefined
+                }
                 onSave={async (p, payload) => {
                     if (!actions) {
                         return { ok: false, message: 'Read-only replay.' };

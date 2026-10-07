@@ -1,3 +1,4 @@
+import type { RulePreviewResult } from '../lib/trace';
 import type {
     ConnectionState,
     DashboardState,
@@ -51,6 +52,10 @@ export interface DashboardActions {
         productId: number,
         payload: object,
     ): Promise<ActionResult<{ product: Product }>>;
+    previewRule(
+        productId: number,
+        payload: object,
+    ): Promise<ActionResult<{ preview: RulePreviewResult }>>;
     createProduct(
         payload: object,
     ): Promise<

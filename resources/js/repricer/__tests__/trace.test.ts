@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { badgeFor, describeTrace } from '../lib/trace';
+import { badgeFor, describePreview, describeTrace } from '../lib/trace';
 import type { Decision, TraceEntry } from '../types';
 
 function t(
@@ -213,5 +213,46 @@ describe('badgeFor', () => {
         );
         expect(badgeFor({ outcome: 'reprice', push: null })).toBe('reprice');
         expect(badgeFor({ outcome: 'skipped', push: null })).toBe('skipped');
+    });
+});
+
+describe('describePreview', () => {
+    it('ends with the price the draft rules would set', () => {
+        expect(
+            describePreview({
+                available: true,
+                outcome: 'reprice',
+                old_price: 1388,
+                new_price: 1382,
+                trace: [
+                    {
+                        rule: 'strategy',
+                        verdict: 'propose',
+                        reason: 'beat lowest',
+                        price_before: 1388,
+                        price_after: 1382,
+                        code: null,
+                    },
+                ],
+            }),
+        ).toBe('Strategy proposed $13.82 → would set $13.82');
+    });
+
+    it('says when the price would be kept, and explains a missing snapshot', () => {
+        expect(
+            describePreview({
+                available: true,
+                outcome: 'no_change',
+                old_price: 2999,
+                new_price: null,
+                trace: [],
+            }),
+        ).toBe('Would keep $29.99');
+        expect(
+            describePreview({
+                available: false,
+                message: 'No market snapshot yet.',
+            }),
+        ).toBe('No market snapshot yet.');
     });
 });

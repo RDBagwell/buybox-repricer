@@ -87,6 +87,8 @@ export class LiveSource implements DataSource {
             }),
         updateRule: (id, payload) =>
             request('PUT', `/api/products/${id}/rule`, payload),
+        previewRule: (id, payload) =>
+            request('POST', `/api/products/${id}/rule/preview`, payload),
         createProduct: (payload) => request('POST', '/api/products', payload),
         archive: (id) =>
             request('POST', `/api/products/${id}/archive`, { confirm: true }),

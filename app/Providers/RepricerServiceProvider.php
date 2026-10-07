@@ -10,6 +10,7 @@ use App\Repricer\Outbound\Backoff;
 use App\Repricer\Outbound\PricePusher;
 use App\Repricer\Pricing\ContextBuilder;
 use App\Repricer\Pricing\RepricingService;
+use App\Repricer\Pricing\RulePreview;
 use App\Repricer\Rules\Pipeline;
 use App\Repricer\Safety\AuditLog;
 use App\Repricer\Safety\CircuitBreaker;
@@ -38,6 +39,14 @@ class RepricerServiceProvider extends ServiceProvider
         $this->app->bind(ContextBuilder::class, fn () => new ContextBuilder((string) config('market.seller_id')));
 
         $this->app->bind(RepricingService::class, fn (Application $app) => new RepricingService(
+            $app->make(Pipeline::class),
+            $app->make(ContextBuilder::class),
+            $app->make(MarketAdapter::class),
+            $app->make(RepricerSettings::class),
+            (string) config('market.seller_id'),
+        ));
+
+        $this->app->bind(RulePreview::class, fn (Application $app) => new RulePreview(
             $app->make(Pipeline::class),
             $app->make(ContextBuilder::class),
             $app->make(MarketAdapter::class),

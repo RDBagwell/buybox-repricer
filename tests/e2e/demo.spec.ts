@@ -188,3 +188,28 @@ test('adds a product through the form, sees it repriced, then archives it', asyn
         page.getByRole('button', { name: `Archive ${title}` }),
     ).toHaveCount(0);
 });
+
+test('the rule editor previews what the draft rules would do, live', async ({
+    page,
+    isMobile,
+}) => {
+    await page.goto('/');
+    await page
+        .getByRole('button', {
+            name: isMobile ? 'Rules' : /Edit rules for Stainless French Press/,
+        })
+        .first()
+        .click();
+    const preview = page.getByTestId('rule-preview');
+    await expect(preview).toContainText(/would (set|keep) \$/, {
+        timeout: 5_000,
+    });
+
+    // Raise the floor above anything the war allows: the preview follows, nothing is saved.
+    await page.getByLabel('Step limit (%)').fill('50');
+    await page.getByLabel('Floor').fill('33.00');
+    await expect(preview).toContainText('would set $33.00', {
+        timeout: 5_000,
+    });
+    await page.getByRole('button', { name: 'Cancel' }).click();
+});

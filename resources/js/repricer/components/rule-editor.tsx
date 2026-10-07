@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import { centsToInput, formatCents } from '../lib/money';
 import type { RuleForm, RulePayload } from '../lib/rule-validation';
 import { validateRule } from '../lib/rule-validation';
+import type { RulePreviewResult } from '../lib/trace';
+import { describePreview } from '../lib/trace';
 import type { Product } from '../types';
 
 interface Props {
@@ -26,6 +28,11 @@ interface Props {
         errors?: Record<string, string[]>;
         message?: string;
     }>;
+    /** Live preview of the draft (absent in read-only replay). */
+    onPreview?: (
+        product: Product,
+        payload: RulePayload,
+    ) => Promise<RulePreviewResult | null>;
 }
 
 function toForm(p: Product): RuleForm {
@@ -84,7 +91,7 @@ const FIELDS: {
     },
 ];
 
-export function RuleEditor({ product, onClose, onSave }: Props) {
+export function RuleEditor({ product, onClose, onSave, onPreview }: Props) {
     const [form, setForm] = useState<RuleForm | null>(null);
     const [touched, setTouched] = useState(false);
     const [serverErrors, setServerErrors] = useState<Record<string, string[]>>(
@@ -104,6 +111,30 @@ export function RuleEditor({ product, onClose, onSave }: Props) {
         () => (form && product ? validateRule(form, product) : null),
         [form, product],
     );
+
+    // Live preview: debounce, and drop answers that arrive after a newer request.
+    const [preview, setPreview] = useState<RulePreviewResult | null>(null);
+    const [previewing, setPreviewing] = useState(false);
+    const latestRequest = useRef(0);
+    const payloadKey = result?.payload ? JSON.stringify(result.payload) : null;
+    useEffect(() => {
+        if (!onPreview || !product || !result?.payload) {
+            return;
+        }
+        const payload = result.payload;
+        const id = ++latestRequest.current;
+        setPreviewing(true);
+        const timer = window.setTimeout(async () => {
+            const r = await onPreview(product, payload);
+            if (id === latestRequest.current) {
+                setPreview(r);
+                setPreviewing(false);
+            }
+        }, 350);
+
+        return () => window.clearTimeout(timer);
+    }, [payloadKey, product?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    useEffect(() => setPreview(null), [product?.id]);
 
     if (!product || !form || !result) {
         return null;
@@ -219,6 +250,68 @@ export function RuleEditor({ product, onClose, onSave }: Props) {
                             );
                         })}
                     </div>
+                    {onPreview && (
+                        <div
+                            className="rounded-md border border-border bg-muted/40 p-3 text-sm"
+                            aria-live="polite"
+                        >
+                            <div className="mb-1 flex items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
+                                <span>With these rules, right now</span>
+                                {previewing && <span>updating…</span>}
+                            </div>
+                            {!result.payload ? (
+                                <p className="text-muted-foreground">
+                                    Fix the highlighted fields to see what these
+                                    rules would do.
+                                </p>
+                            ) : preview === null ? (
+                                <p className="text-muted-foreground">…</p>
+                            ) : (
+                                <>
+                                    {preview.available &&
+                                        preview.old_price != null && (
+                                            <p className="mb-1 text-base tabular-nums">
+                                                {formatCents(preview.old_price)}{' '}
+                                                →{' '}
+                                                <span className="font-semibold">
+                                                    {formatCents(
+                                                        preview.new_price ??
+                                                            preview.old_price,
+                                                    )}
+                                                </span>
+                                                {preview.outcome ===
+                                                    'no_change' && (
+                                                    <span className="ml-2 text-xs text-muted-foreground">
+                                                        no change
+                                                    </span>
+                                                )}
+                                            </p>
+                                        )}
+                                    <p
+                                        className="text-xs leading-snug"
+                                        data-testid="rule-preview"
+                                    >
+                                        {describePreview(preview)}
+                                    </p>
+                                    {(preview.notes ?? []).map((n) => (
+                                        <p
+                                            key={n}
+                                            className="mt-1 text-xs text-amber-800 dark:text-amber-300"
+                                        >
+                                            {n}
+                                        </p>
+                                    ))}
+                                    {preview.available && (
+                                        <p className="mt-1 text-[11px] text-muted-foreground">
+                                            Against the latest market snapshot.
+                                            Nothing is saved or pushed until you
+                                            save.
+                                        </p>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
                     {message && !Object.keys(serverErrors).length && (
                         <p className="text-sm text-red-700">{message}</p>
                     )}

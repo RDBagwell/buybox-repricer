@@ -10,6 +10,7 @@ use App\Repricer\Dashboard\DashboardQuery;
 use App\Repricer\Events\ProductUpdated;
 use App\Repricer\Market\MarketAdapter;
 use App\Repricer\Models\Product;
+use App\Repricer\Pricing\RulePreview;
 use App\Repricer\Safety\AuditLog;
 use App\Simulator\Engine\SimOffer;
 use App\Simulator\SimulatorControl;
@@ -161,6 +162,20 @@ class ProductController extends Controller
         }
 
         return response()->json(['product' => $this->query->product($product->id)]);
+    }
+
+    /**
+     * The rule editor's live preview: what the draft rules would do against the latest market
+     * snapshot. Read-only (nothing is decided, pushed or audited), so it has its own, looser
+     * rate limit than the mutations.
+     */
+    public function previewRule(UpdatePricingRuleRequest $request, Product $product, RulePreview $preview): JsonResponse
+    {
+        if ($product->rule === null || $product->isArchived()) {
+            abort(404);
+        }
+
+        return response()->json(['preview' => $preview->preview($product, $request->validated())]);
     }
 
     public function updateRule(UpdatePricingRuleRequest $request, Product $product): JsonResponse
