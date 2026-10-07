@@ -79,7 +79,7 @@ jobs:
         run: vendor/bin/pest --ci
 
   assets:
-    name: Frontend build + types
+    name: Frontend lint, Vitest, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -108,3 +108,57 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           npm run build
+
+      - name: Lint + format (vp check)
+        run: npx vp check
+
+      - name: Types
+        run: npm run types:check
+
+      - name: Vitest
+        # Vitest boots Vite with the Laravel plugin, which refuses dev servers when CI is set.
+        # No HMR server is served here, so the check does not apply.
+        env:
+          LARAVEL_BYPASS_ENV_CHECK: '1'
+        run: npm test
+
+      - name: Replay build (GitHub Pages bundle)
+        run: npm run build:replay
+
+  demo-image:
+    name: Demo container (build + smoke test)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: buybox
+          POSTGRES_PASSWORD: buybox
+          POSTGRES_DB: buybox_demo
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U buybox -d buybox_demo" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # The same Dockerfile Render builds (no target: the last stage, "demo").
+      - name: Build
+        run: docker build -f docker/php/Dockerfile -t buybox-demo .
+
+      - name: Run and smoke-test
+        run: |
+          docker run -d --name demo --network host \
+            -e PORT=10000 \
+            -e APP_KEY="base64:$(openssl rand -base64 32)" \
+            -e APP_URL=http://127.0.0.1:10000 \
+            -e TRUSTED_PROXIES= \
+            -e DB_URL=postgres://buybox:buybox@127.0.0.1:5432/buybox_demo \
+            -e REVERB_APP_ID=buybox -e REVERB_APP_KEY=smoke-key -e REVERB_APP_SECRET=smoke-secret \
+            buybox-demo
+          docker/demo/smoke.sh http://127.0.0.1:10000 smoke-key
+
+      - name: Container logs
+        if: always()
+        run: docker logs demo 2>&1 | tail -200

@@ -4,6 +4,7 @@ namespace App\Repricer\Jobs;
 
 use App\Repricer\Market\OfferChangeNotification;
 use App\Repricer\Models\Product;
+use App\Repricer\Pricing\CooldownSweeper;
 use App\Repricer\Pricing\RepricingService;
 use DateTime;
 use Illuminate\Bus\Queueable;
@@ -52,6 +53,11 @@ final class RepriceJob implements ShouldQueue
             return;
         }
 
-        $service->handle($product, OfferChangeNotification::fromArray($this->notification));
+        $notification = OfferChangeNotification::fromArray($this->notification);
+        if (! CooldownSweeper::stillCurrent($product, $notification)) {
+            return; // superseded re-check: a newer decision already covers it
+        }
+
+        $service->handle($product, $notification);
     }
 }

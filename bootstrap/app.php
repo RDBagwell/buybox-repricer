@@ -12,13 +12,21 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
+        channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
     ->withCommands([
         __DIR__.'/../app/Simulator/Console',
         __DIR__.'/../app/Repricer/Console',
+        __DIR__.'/../app/Demo/Console',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a TLS-terminating edge (the hosted demo), trust its X-Forwarded-* headers so
+        // URLs come out as https. Unset locally and in Compose. Read from the real environment.
+        if ($proxies = getenv('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
+        }
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

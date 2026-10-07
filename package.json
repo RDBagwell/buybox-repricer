@@ -8,7 +8,9 @@
         "dev": "vp dev",
         "check": "vp check",
         "check:fix": "vp check --fix",
-        "types:check": "tsc --noEmit"
+        "types:check": "tsc --noEmit",
+        "test": "vp test run",
+        "build:replay": "vp build --config vite.replay.config.ts && mkdir -p dist-replay/recordings && cp public/recordings/demo.json dist-replay/recordings/demo.json && cp dist-replay/replay.html dist-replay/index.html && cp public/favicon.svg dist-replay/favicon.svg"
     },
     "dependencies": {
         "@inertiajs/react": "^3.0.0",
@@ -35,10 +37,13 @@
         "clsx": "^2.1.1",
         "concurrently": "^10.0.3",
         "input-otp": "^1.4.2",
+        "laravel-echo": "2.6.1",
         "laravel-vite-plugin": "^3.0.0",
         "lucide-react": "^0.475.0",
+        "pusher-js": "8.6.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "recharts": "3.10.1",
         "sonner": "^2.0.0",
         "tailwind-merge": "^3.0.1",
         "tailwindcss": "^4.0.0",
@@ -48,6 +53,7 @@
     },
     "devDependencies": {
         "@laravel/vite-plugin-wayfinder": "^0.1.3",
+        "@playwright/test": "1.56.1",
         "@rolldown/plugin-babel": "^0.2.3",
         "@types/node": "^22.13.5",
         "babel-plugin-react-compiler": "^1.0.0",
@@ -61,5 +67,9 @@
         "@tailwindcss/oxide-win32-x64-msvc": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.29.1",
         "lightningcss-win32-x64-msvc": "^1.29.1"
+    },
+    "overrides": {
+        "shell-quote": "1.12.0",
+        "tinypool": "2.2.0"
     }
 }

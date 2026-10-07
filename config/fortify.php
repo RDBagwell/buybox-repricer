@@ -160,8 +160,10 @@ return [
     |
     */
 
-    'features' => [
-        Features::registration(),
+    // The public demo turns registration off (ALLOW_REGISTRATION=false): visitors never need an
+    // account, and accounts are the one thing a demo reset would not wipe.
+    'features' => array_values(array_filter([
+        env('ALLOW_REGISTRATION', true) ? Features::registration() : null,
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([
@@ -172,6 +174,6 @@ return [
         Features::passkeys([
             'confirmPassword' => true,
         ]),
-    ],
+    ])),
 
 ];

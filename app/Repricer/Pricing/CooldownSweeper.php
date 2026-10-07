@@ -23,12 +23,18 @@ use Illuminate\Support\Facades\Cache;
  */
 final class CooldownSweeper
 {
+    public const CHANGE_TYPE = 'cooldown_recheck';
+
+    private const SUFFIX = '#recheck';
+
     public function __construct(private readonly MarketAdapter $market) {}
 
     /** @return int number of re-checks queued */
     public function sweep(): int
     {
-        $latestIds = PriceDecision::query()->selectRaw('max(id)')->groupBy('product_id');
+        // Stale decisions are ignored: they record a late notification, carry no newer market
+        // information, and must not hide the cooldown skip that still needs a re-check.
+        $latestIds = PriceDecision::query()->selectRaw('max(id)')->where('outcome', '!=', DecisionStatus::Stale->value)->groupBy('product_id');
         $candidates = PriceDecision::query()
             ->whereIn('id', $latestIds)
             ->where('reason_code', 'cooldown')
@@ -63,6 +69,22 @@ final class CooldownSweeper
         return $queued;
     }
 
+    /**
+     * A queued re-check is only worth running while the cooldown skip it re-checks is still the
+     * product's latest decision. If a newer notification has been decided meanwhile, that newer
+     * decision already reflects the market and the re-check would only be recorded as stale noise.
+     */
+    public static function stillCurrent(Product $product, OfferChangeNotification $recheck): bool
+    {
+        if ($recheck->changeType !== self::CHANGE_TYPE || ! str_ends_with($recheck->notificationId, self::SUFFIX)) {
+            return true;
+        }
+
+        $latest = PriceDecision::query()->where('product_id', $product->id)->where('outcome', '!=', DecisionStatus::Stale->value)->latest('id')->value('event_id');
+
+        return $latest === substr($recheck->notificationId, 0, -strlen(self::SUFFIX));
+    }
+
     private function notificationFrom(PriceDecision $decision, Product $product): OfferChangeNotification
     {
         $offers = $decision->snapshots()->orderBy('id')->get()->map(fn (OfferSnapshot $s) => new MarketOffer(
@@ -79,7 +101,7 @@ final class CooldownSweeper
         }
 
         return new OfferChangeNotification(
-            notificationId: $decision->event_id.'#recheck',
+            notificationId: $decision->event_id.self::SUFFIX,
             asin: $product->asin,
             eventTime: $decision->event_time,
             offers: array_values($offers),
@@ -87,7 +109,7 @@ final class CooldownSweeper
             buyBoxSellerId: $buyBox?->sellerId,
             buyBoxLanded: $buyBox?->landed(),
             triggerSellerId: 'cooldown-recheck',
-            changeType: 'cooldown_recheck',
+            changeType: self::CHANGE_TYPE,
         );
     }
 }

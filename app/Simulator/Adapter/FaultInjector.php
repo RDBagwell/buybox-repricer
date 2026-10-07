@@ -22,6 +22,7 @@ final class FaultInjector
         private readonly int $http503Bps,
         private readonly int $retryAfterMs,
         private readonly string $counterKey = 'sim:faults:seq',
+        private readonly ?\Closure $rates = null,
     ) {}
 
     /**
@@ -29,17 +30,20 @@ final class FaultInjector
      */
     public function roll(): ?array
     {
-        if ($this->http429Bps <= 0 && $this->http503Bps <= 0) {
+        // Runtime rates (set from the dashboard) override the configured ones.
+        [$http429Bps, $http503Bps] = $this->rates !== null ? ($this->rates)() : [$this->http429Bps, $this->http503Bps];
+
+        if ($http429Bps <= 0 && $http503Bps <= 0) {
             return null;
         }
 
         $seq = (int) $this->redis->command('incr', [$this->counterKey]);
         $roll = (new Randomizer(new Xoshiro256StarStar($this->seed * 1_000_003 + $seq)))->getInt(1, 10_000);
 
-        if ($roll <= $this->http429Bps) {
+        if ($roll <= $http429Bps) {
             return ['status' => 429, 'retry_after_ms' => $this->retryAfterMs];
         }
-        if ($roll <= $this->http429Bps + $this->http503Bps) {
+        if ($roll <= $http429Bps + $http503Bps) {
             return ['status' => 503, 'retry_after_ms' => $this->retryAfterMs];
         }
 

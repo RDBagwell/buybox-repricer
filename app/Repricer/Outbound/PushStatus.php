@@ -11,6 +11,15 @@ enum PushStatus: string
     case Cancelled = 'cancelled';   // kill switch or dry run turned on before the push
     case Blocked = 'blocked';       // circuit breaker open
 
+    /** @return list<string> */
+    public static function terminalValues(): array
+    {
+        return array_values(array_map(
+            fn (self $s) => $s->value,
+            array_filter(self::cases(), fn (self $s) => $s->isTerminal()),
+        ));
+    }
+
     public function isTerminal(): bool
     {
         return $this !== self::Retrying;

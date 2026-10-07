@@ -83,6 +83,9 @@ final class WorldRepository
                 'tick' => 0,
                 'clock_ms' => $world->clock->nowMs,
                 'run' => $state === null ? 1 : ((int) $state->run) + 1,
+                // A reset clears injected API errors; running and speed are kept.
+                'fault_429_bps' => 0,
+                'fault_503_bps' => 0,
                 'created_at' => $state->created_at ?? $now,
                 'updated_at' => $now,
             ]);
@@ -135,12 +138,58 @@ final class WorldRepository
                 if ($offer->bot !== null) {
                     $this->db->table(self::OFFERS)->where('asin', $listing->asin)->where('seller_id', $offer->sellerId)->update([
                         'price' => $offer->price->cents,
+                        'in_stock' => $offer->inStock,
                         'bot_memory' => json_encode((object) $offer->botMemory, JSON_THROW_ON_ERROR),
                         'updated_at' => $now,
                     ]);
                 }
             }
         }
+    }
+
+    /**
+     * @return array{running: bool, speed: int, fault_429_bps: int, fault_503_bps: int}
+     */
+    public function controls(): array
+    {
+        $row = $this->db->table(self::STATE)->where('id', 1)->first(['running', 'speed', 'fault_429_bps', 'fault_503_bps']);
+
+        return [
+            'running' => (bool) ($row->running ?? false),
+            'speed' => (int) ($row->speed ?? 1),
+            'fault_429_bps' => (int) ($row->fault_429_bps ?? 0),
+            'fault_503_bps' => (int) ($row->fault_503_bps ?? 0),
+        ];
+    }
+
+    /**
+     * @param  array{running?: bool, speed?: int, fault_429_bps?: int, fault_503_bps?: int}  $changes
+     */
+    public function updateControls(array $changes): void
+    {
+        $this->db->table(self::STATE)->where('id', 1)->update($changes + ['updated_at' => now()]);
+    }
+
+    /**
+     * Insert a new bot offer, or replace the stored state of an existing one (price, stock, memory).
+     */
+    public function putOffer(string $asin, SimOffer $offer): void
+    {
+        $now = now();
+        $this->db->table(self::OFFERS)->updateOrInsert(
+            ['asin' => $asin, 'seller_id' => $offer->sellerId],
+            $this->offerRow($asin, $offer) + ['created_at' => $now, 'updated_at' => $now],
+        );
+    }
+
+    public function removeOffer(string $asin, string $sellerId): void
+    {
+        $this->db->table(self::OFFERS)->where('asin', $asin)->where('seller_id', $sellerId)->whereNotNull('bot')->delete();
+    }
+
+    public function saveBuyBox(Listing $listing): void
+    {
+        $this->db->table(self::LISTINGS)->where('asin', $listing->asin)->update(['buybox_seller_id' => $listing->buyBoxSellerId, 'updated_at' => now()]);
     }
 
     public function saveOffer(Listing $listing, SimOffer $offer): void
@@ -239,6 +288,7 @@ final class WorldRepository
             'bot' => $offer->bot,
             'bot_params' => json_encode((object) $offer->botParams, JSON_THROW_ON_ERROR),
             'bot_memory' => json_encode((object) $offer->botMemory, JSON_THROW_ON_ERROR),
+            'in_stock' => $offer->inStock,
         ];
     }
 
@@ -260,6 +310,7 @@ final class WorldRepository
             $row->bot === null ? null : (string) $row->bot,
             $params,
             $memory,
+            (bool) $row->in_stock,
         );
     }
 }

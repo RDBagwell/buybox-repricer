@@ -39,7 +39,7 @@ final readonly class AnyOfferChanged
             $marketTimeMs,
             $triggerSellerId,
             $changeType,
-            array_map(fn (SimOffer $o) => $o->toArray(), array_values($listing->offers)),
+            array_map(fn (SimOffer $o) => $o->toArray(), array_values($listing->activeOffers())),
             $listing->buyBoxSellerId,
         );
     }

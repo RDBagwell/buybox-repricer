@@ -56,7 +56,7 @@ arch('shared support code depends on neither side')
 arch('money is never a float')
     ->expect('App')
     ->not->toUse(['floatval', 'round', 'number_format', 'floor', 'ceil'])
-    ->ignoring(['App\Repricer\Jobs\PushPriceJob', 'App\Simulator\Console\SimRunCommand']); // ceil on ms→s queue delay; CLI display only
+    ->ignoring(['App\Repricer\Jobs\PushPriceJob', 'App\Simulator\Console\SimRunCommand', 'App\Demo\Console\SimRecordCommand']); // ceil on ms→s queue delay; CLI display only
 
 const REPRICER_TABLES = ['products', 'pricing_rules', 'price_decisions', 'offer_snapshots', 'price_pushes', 'buybox_history', 'settings', 'duplicate_deliveries'];
 

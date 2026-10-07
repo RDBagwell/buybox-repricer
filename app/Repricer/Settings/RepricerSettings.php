@@ -2,6 +2,7 @@
 
 namespace App\Repricer\Settings;
 
+use App\Repricer\Events\SettingsChanged;
 use App\Repricer\Models\Setting;
 
 /**
@@ -27,6 +28,7 @@ final class RepricerSettings
     public function set(string $key, bool $value): void
     {
         Setting::query()->updateOrCreate(['key' => $key], ['value' => $value ? '1' : '0']);
+        SettingsChanged::dispatch();
     }
 
     private function bool(string $key): bool

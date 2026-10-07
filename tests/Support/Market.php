@@ -22,7 +22,7 @@ final class Market
     /** Seed the simulated marketplace (seed 42) and our catalogue. */
     public static function seed(): void
     {
-        test()->seed([MarketplaceSeeder::class, CatalogSeeder::class]);
+        test()->seed([CatalogSeeder::class, MarketplaceSeeder::class]);
     }
 
     public static function product(string $sku = 'MAT-SIL-2'): Product

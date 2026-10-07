@@ -36,8 +36,24 @@ final readonly class Simulation
         foreach ($world->listings as $listing) {
             $trigger = null;
 
+            $changeType = 'competitor_price';
             foreach ($listing->offers as $offer) {
                 if ($offer->bot === null) {
+                    continue;
+                }
+
+                // Out of stock: wait for the restock tick (set by a stockout), then come back.
+                if (! $offer->inStock) {
+                    $restockAt = (int) ($offer->botMemory['restock_at'] ?? 0);
+                    if ($restockAt > 0 && $world->tick >= $restockAt) {
+                        $memory = $offer->botMemory;
+                        unset($memory['restock_at']);
+                        $listing->put($offer->withStock(true)->withMemory($memory));
+                        $moves[] = ['asin' => $listing->asin, 'seller' => $offer->sellerId, 'from' => $offer->price->cents, 'to' => $offer->price->cents, 'reason' => 'back in stock'];
+                        $trigger ??= $offer->sellerId;
+                        $changeType = 'competitor_stock';
+                    }
+
                     continue;
                 }
 
@@ -57,6 +73,15 @@ final readonly class Simulation
                     $listing->put($current);
                 }
 
+                if ($action->stockoutTicks !== null) {
+                    $listing->put($this->outOfStock($current, $world->tick + $action->stockoutTicks));
+                    $moves[] = ['asin' => $listing->asin, 'seller' => $current->sellerId, 'from' => $current->price->cents, 'to' => $current->price->cents, 'reason' => 'out of stock: '.$action->reason];
+                    $trigger ??= $current->sellerId;
+                    $changeType = 'competitor_stock';
+
+                    continue;
+                }
+
                 if ($action->newPrice !== null && ! $action->newPrice->equals($current->price)) {
                     $moves[] = ['asin' => $listing->asin, 'seller' => $current->sellerId, 'from' => $current->price->cents, 'to' => $action->newPrice->cents, 'reason' => $action->reason];
                     $listing->put($current->withPrice($action->newPrice));
@@ -71,7 +96,7 @@ final readonly class Simulation
 
             if ($trigger !== null || $bbChange !== null) {
                 $changed[] = $listing->asin;
-                $events[] = AnyOfferChanged::fromListing($listing, $world->tick, $world->clock->nowMs, $trigger ?? (string) $listing->buyBoxSellerId, $trigger !== null ? 'competitor_price' : 'buybox');
+                $events[] = AnyOfferChanged::fromListing($listing, $world->tick, $world->clock->nowMs, $trigger ?? (string) $listing->buyBoxSellerId, $trigger !== null ? $changeType : 'buybox');
             }
         }
 
@@ -90,9 +115,17 @@ final readonly class Simulation
         return new ListingUpdate(AnyOfferChanged::fromListing($listing, $tick, $marketTimeMs, $sellerId, 'listing_update'), $bbChange);
     }
 
+    /**
+     * Take a bot's offer off sale until $restockAtTick (a manual stockout or a Sleeper going quiet).
+     */
+    public function outOfStock(SimOffer $offer, int $restockAtTick): SimOffer
+    {
+        return $offer->withStock(false)->withMemory(['restock_at' => $restockAtTick] + $offer->botMemory);
+    }
+
     public function recomputeBuyBox(Listing $listing, int $tick, int $marketTimeMs): ?BuyBoxChange
     {
-        $result = $this->scorer->decide($listing->offers, $listing->buyBoxSellerId);
+        $result = $this->scorer->decide($listing->activeOffers(), $listing->buyBoxSellerId);
         if ($result->winner === $listing->buyBoxSellerId) {
             return null;
         }

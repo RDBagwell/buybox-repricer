@@ -10,6 +10,11 @@ return [
         'backoff_cap_ms' => 30_000,
     ],
 
+    // Pause a product that reprices more than this many times in one MARKET hour.
+    'breaker' => [
+        'max_reprices_per_hour' => (int) env('REPRICER_BREAKER_MAX_PER_HOUR', 20),
+    ],
+
     'listener' => [
         'batch' => 10,       // notifications pulled per receive
         'wait_ms' => 2000,   // long-poll wait when the stream is empty

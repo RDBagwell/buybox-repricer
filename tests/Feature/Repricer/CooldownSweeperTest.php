@@ -1,6 +1,7 @@
 <?php
 
 use App\Repricer\Jobs\PushPriceJob;
+use App\Repricer\Jobs\RepriceJob;
 use App\Repricer\Models\PriceDecision;
 use App\Repricer\Pricing\CooldownSweeper;
 use App\Repricer\Pricing\RepricingService;
@@ -64,4 +65,46 @@ it('ignores products whose latest decision was not a cooldown skip', function ()
 it('reads market time from the adapter', function () {
     setMarketClock('2026-03-01T00:00:00Z');
     expect(app(WorldRepository::class)->clockMs())->toBe((new DateTimeImmutable('2026-03-01T00:00:00Z'))->getTimestamp() * 1000);
+});
+
+it('drops a queued re-check that a newer decision has superseded, instead of recording it as stale', function () {
+    Queue::fake();
+    $p = Market::product();
+    $p->forceFill(['last_price_change_at' => '2026-01-01T00:09:00Z'])->save();
+    setMarketClock('2026-01-01T00:10:00Z');
+    app(RepricingService::class)->handle($p, Market::notification(time: '2026-01-01T00:10:00Z'));
+    setMarketClock('2026-01-01T00:20:00Z');
+    app(CooldownSweeper::class)->sweep();
+
+    $recheck = null;
+    Queue::assertPushed(RepriceJob::class, function ($job) use (&$recheck) {
+        $recheck = $job;
+
+        return true;
+    });
+
+    // A newer notification is decided before the re-check job runs.
+    app(RepricingService::class)->handle(Market::product(), Market::notification(time: '2026-01-01T00:19:00Z'));
+    $before = PriceDecision::query()->count();
+
+    $recheck->handle(app(RepricingService::class));
+
+    expect(PriceDecision::query()->count())->toBe($before)
+        ->and(PriceDecision::query()->where('outcome', 'stale')->count())->toBe(0);
+});
+
+it('still re-checks a cooldown skip that a late, stale notification was recorded after', function () {
+    $p = Market::product();
+    $p->forceFill(['last_price_change_at' => '2026-01-01T00:09:00Z'])->save();
+    setMarketClock('2026-01-01T00:10:00Z');
+    $skip = app(RepricingService::class)->handle($p, Market::notification(time: '2026-01-01T00:10:00Z'));
+    expect($skip->reason_code)->toBe('cooldown');
+
+    // A notification from before the skip arrives late: recorded as stale, after the skip.
+    $stale = app(RepricingService::class)->handle(Market::product(), Market::notification(time: '2026-01-01T00:08:00Z'));
+    expect($stale->outcome)->toBe('stale');
+
+    setMarketClock('2026-01-01T00:20:00Z');
+    Queue::fake();
+    expect(app(CooldownSweeper::class)->sweep())->toBe(1);
 });

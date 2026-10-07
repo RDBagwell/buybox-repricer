@@ -24,4 +24,4 @@ pest()->extend(TestCase::class)
         Redis::connection()->command('flushdb');
         Redis::connection('cache')->command('flushdb');
     })
-    ->in('Feature/Simulator', 'Feature/Repricer', 'Contract', 'Simulation');
+    ->in('Feature/Simulator', 'Feature/Repricer', 'Feature/Dashboard', 'Contract', 'Simulation');

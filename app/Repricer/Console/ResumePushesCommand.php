@@ -4,6 +4,7 @@ namespace App\Repricer\Console;
 
 use App\Repricer\Jobs\PushPriceJob;
 use App\Repricer\Models\PriceDecision;
+use App\Repricer\Outbound\PushStatus;
 use App\Repricer\Pricing\DecisionStatus;
 use Illuminate\Console\Command;
 
@@ -20,7 +21,7 @@ class ResumePushesCommand extends Command
 
     public function handle(): int
     {
-        $terminal = ['succeeded', 'failed', 'superseded', 'cancelled', 'blocked'];
+        $terminal = PushStatus::terminalValues();
 
         $ids = PriceDecision::query()
             ->where('outcome', DecisionStatus::Reprice->value)

@@ -1,0 +1,30 @@
+# Render Blueprint for the public demo: one free Docker web service running the whole app
+# (see docker/php/Dockerfile, stage "demo"). Postgres is external: paste a connection URL into
+# DB_URL (Neon's free tier does not expire; Render's free Postgres is deleted after 30 days).
+# Full walkthrough, costs and limits: docs/hosting.md
+services:
+    - type: web
+      name: buybox-repricer-demo
+      runtime: docker
+      plan: free
+      dockerfilePath: ./docker/php/Dockerfile
+      dockerContext: .
+      healthCheckPath: /up
+      autoDeploy: true
+      envVars:
+          - key: APP_KEY # php artisan key:generate --show
+            sync: false
+          - key: APP_URL # e.g. https://buybox-repricer-demo.onrender.com
+            sync: false
+          - key: DB_URL # postgres://user:pass@host/db?sslmode=require
+            sync: false
+          - key: REVERB_APP_ID
+            value: buybox
+          - key: REVERB_APP_KEY
+            generateValue: true
+          - key: REVERB_APP_SECRET
+            generateValue: true
+          - key: DEMO_RESET_MINUTES
+            value: '30'
+          - key: DEMO_MAX_SPEED
+            value: '50'

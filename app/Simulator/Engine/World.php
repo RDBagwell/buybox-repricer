@@ -36,7 +36,7 @@ final class World
         foreach ($this->listings as $asin => $listing) {
             $listings[$asin] = [
                 'buybox' => $listing->buyBoxSellerId,
-                'offers' => array_map(fn (SimOffer $o) => $o->toArray() + ['memory' => $o->botMemory], array_values($listing->offers)),
+                'offers' => array_map(fn (SimOffer $o) => $o->toArray() + ['memory' => $o->botMemory, 'in_stock' => $o->inStock], array_values($listing->offers)),
             ];
         }
 

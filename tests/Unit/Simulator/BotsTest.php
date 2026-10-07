@@ -86,6 +86,6 @@ describe('Anchor', function () {
 it('resolves bots by key and rejects unknown ones', function () {
     $r = new BotRegistry;
     expect($r->get('penny_pincher'))->toBeInstanceOf(PennyPincher::class)
-        ->and($r->keys())->toBe(['penny_pincher', 'anchor']);
+        ->and($r->keys())->toBe(['penny_pincher', 'anchor', 'matcher', 'sleeper', 'chaos']);
     $r->get('nope');
 })->throws(InvalidArgumentException::class);

@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        $this->call([MarketplaceSeeder::class, CatalogSeeder::class]);
+        // Catalogue first: the marketplace publishes a snapshot notification per listing when it is
+        // created, and those must find our products to be priced.
+        $this->call([CatalogSeeder::class, MarketplaceSeeder::class]);
     }
 }

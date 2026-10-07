@@ -163,7 +163,7 @@ final class SimulatorMarketAdapter implements MarketAdapter
     private function offers(Listing $listing): array
     {
         $out = [];
-        foreach ($listing->offers as $o) {
+        foreach ($listing->activeOffers() as $o) {
             $out[] = new MarketOffer($o->sellerId, $o->price, $o->shipping, $o->fulfillment, $o->rating, $o->handlingDays, $o->sellerId === $listing->buyBoxSellerId);
         }
 

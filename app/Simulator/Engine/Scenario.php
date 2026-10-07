@@ -35,7 +35,7 @@ final class Scenario
                 );
             }
             $listing = new Listing($def['asin'], $def['title'], $offers);
-            $listing->buyBoxSellerId = $scorer->decide($listing->offers, null)->winner;
+            $listing->buyBoxSellerId = $scorer->decide($listing->activeOffers(), null)->winner;
             $built[$def['asin']] = $listing;
         }
 
