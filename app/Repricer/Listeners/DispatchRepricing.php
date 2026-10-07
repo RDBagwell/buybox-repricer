@@ -7,7 +7,7 @@ use App\Repricer\Jobs\RepriceJob;
 use App\Repricer\Models\Product;
 
 /**
- * One RepriceJob per (product listed on the ASIN, event). The queue between the notification
+ * One RepriceJob per (active product listed on the ASIN, event); archived products are ignored. The queue between the notification
  * and the decision absorbs bursts; the job itself is idempotent.
  */
 final class DispatchRepricing
@@ -17,7 +17,7 @@ final class DispatchRepricing
         $n = $event->notification;
         $payload = $n->toArray();
 
-        foreach (Product::query()->where('asin', $n->asin)->pluck('id') as $productId) {
+        foreach (Product::query()->active()->where('asin', $n->asin)->pluck('id') as $productId) {
             RepriceJob::dispatch((int) $productId, $payload);
         }
     }

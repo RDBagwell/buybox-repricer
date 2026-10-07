@@ -32,6 +32,8 @@ return [
     'max_speed' => (int) env('DEMO_MAX_SPEED', 50),
     'default_speed' => (int) env('DEMO_DEFAULT_SPEED', 20),
     'max_offers_per_listing' => 6,
+    // Products in the catalogue at once (visitors can add their own; archived ones don't count).
+    'max_products' => (int) env('DEMO_MAX_PRODUCTS', 8),
     'max_fault_bps' => 3000,
 
     // Mutating requests per minute, per visitor IP (demo) or per user (operator mode).

@@ -41,6 +41,8 @@ Route::prefix('api')->name('api.')->group(function () {
         Route::post('switches/kill', [SwitchController::class, 'killSwitch'])->name('switches.kill');
         Route::post('switches/dry-run', [SwitchController::class, 'dryRun'])->name('switches.dry-run');
 
+        Route::post('products', [ProductController::class, 'store'])->name('products.store');
+        Route::post('products/{product}/archive', [ProductController::class, 'archive'])->name('products.archive');
         Route::post('products/{product}/pause', [ProductController::class, 'pause'])->name('products.pause');
         Route::post('products/{product}/resume', [ProductController::class, 'resume'])->name('products.resume');
         Route::put('products/{product}/rule', [ProductController::class, 'updateRule'])->name('products.rule');
