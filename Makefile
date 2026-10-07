@@ -1,17 +1,21 @@
-.PHONY: up down fresh sim sim-fast trace logs ps test shell
+.PHONY: up env down fresh sim sim-fast trace logs ps test shell
 
 DC := docker compose
 ART := $(DC) exec app php artisan
 
-## Build and boot the stack, migrate and seed. Creates .env with a fresh APP_KEY on first run.
-up: .env
+## Build and boot the stack, migrate and seed. Creates .env if missing and fills in APP_KEY if blank.
+up: env
 	$(DC) up -d --build
 	@echo ""
 	@echo "Stack is up. Try:  make sim   (then)  make trace SKU=FP-1L-STEEL"
 
-.env:
-	cp .env.example .env
-	sed -i.bak "s|^APP_KEY=.*|APP_KEY=base64:$$(openssl rand -base64 32)|" .env && rm -f .env.bak
+## Ensure .env exists and has an APP_KEY (an existing .env with a blank key is fixed, a set key is kept).
+env:
+	@test -f .env || cp .env.example .env
+	@if ! grep -q '^APP_KEY=base64:' .env; then \
+		sed -i.bak "s|^APP_KEY=.*|APP_KEY=base64:$$(openssl rand -base64 32)|" .env && rm -f .env.bak; \
+		echo "Generated APP_KEY in .env"; \
+	fi
 
 down:
 	$(DC) down
