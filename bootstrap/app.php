@@ -21,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Demo/Console',
     ])
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a TLS-terminating edge (the hosted demo), trust its X-Forwarded-* headers so
+        // URLs come out as https. Unset locally and in Compose. Read from the real environment.
+        if ($proxies = getenv('TRUSTED_PROXIES')) {
+            $middleware->trustProxies(at: $proxies === '*' ? '*' : explode(',', $proxies));
+        }
+
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [

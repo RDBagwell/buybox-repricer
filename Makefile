@@ -1,4 +1,4 @@
-.PHONY: up env down fresh sim sim-fast trace logs ps test shell
+.PHONY: up env down fresh sim sim-fast trace logs ps test test-js e2e demo-reset record shell
 
 DC := docker compose
 ART := $(DC) exec app php artisan
@@ -33,8 +33,17 @@ sim:
 trace:
 	$(ART) repricer:trace $${SKU:-FP-1L-STEEL} --limit=$${LIMIT:-5}
 
+## Rebuild the demo world from its seed (what the public demo does every 30 minutes).
+demo-reset:
+	$(ART) demo:reset --force
+
+## Re-record the replay (public/recordings/demo.json) from a real seeded run.
+record:
+	$(ART) sim:record --seed=$${SEED:-42}
+	$(DC) cp app:/var/www/html/public/recordings/demo.json public/recordings/demo.json
+
 logs:
-	$(DC) logs -f horizon listener
+	$(DC) logs -f horizon listener reverb simulator
 
 ps:
 	$(DC) ps
@@ -42,6 +51,14 @@ ps:
 ## Run the test suite inside the container against the stack's Postgres and Redis.
 test:
 	$(DC) exec -e DB_DATABASE=buybox_test app sh -c "composer install --no-interaction --quiet && vendor/bin/pest"
+
+## Frontend unit tests (Vitest), on the host.
+test-js:
+	npm test
+
+## Browser tests against the running stack (needs Chromium; see playwright.config.ts).
+e2e:
+	E2E_BASE_URL=$${E2E_BASE_URL:-http://localhost:8080} npx playwright test
 
 shell:
 	$(DC) exec app sh

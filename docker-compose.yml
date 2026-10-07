@@ -22,6 +22,10 @@ x-app: &app
         QUEUE_CONNECTION: redis
         CACHE_STORE: redis
         SESSION_DRIVER: redis
+        BROADCAST_CONNECTION: reverb
+        REVERB_HOST: reverb
+        REVERB_PORT: 8090
+        REVERB_SCHEME: http
     depends_on:
         postgres: { condition: service_healthy }
         redis: { condition: service_healthy }
@@ -56,7 +60,7 @@ services:
     # One-shot: migrate and seed (idempotent), then exit. Everything else waits for it.
     migrate:
         <<: *app
-        command: sh -c "php artisan migrate --force && php artisan db:seed --force"
+        command: sh -c "php artisan migrate --force && php artisan db:seed --force && php artisan demo:prime --if-fresh"
         restart: 'no'
 
     app:
@@ -71,7 +75,7 @@ services:
             dockerfile: docker/php/Dockerfile
             target: web
         ports: ['8080:80']
-        depends_on: [app]
+        depends_on: [app, reverb]
         restart: unless-stopped
 
     # Queue workers: reprice and push queues.
@@ -91,6 +95,20 @@ services:
     scheduler:
         <<: *app
         command: php artisan schedule:work
+        depends_on:
+            migrate: { condition: service_completed_successfully }
+
+    # WebSockets for the live dashboard; browsers reach it through nginx (/app).
+    reverb:
+        <<: *app
+        command: php artisan reverb:start --host=0.0.0.0 --port=8090
+        depends_on:
+            migrate: { condition: service_completed_successfully }
+
+    # Keeps the world ticking while a dashboard is open (idles after 2 minutes unwatched).
+    simulator:
+        <<: *app
+        command: php artisan sim:daemon --max-speed=100 --idle-after=120
         depends_on:
             migrate: { condition: service_completed_successfully }
 
