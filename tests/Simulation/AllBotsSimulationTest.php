@@ -4,7 +4,6 @@ use App\Demo\HeadlessLoop;
 use App\Repricer\Models\PriceDecision;
 use App\Repricer\Models\PricePush;
 use App\Repricer\Models\Product;
-use App\Repricer\Outbound\PricePusher;
 use App\Repricer\Outbound\PushStatus;
 use App\Simulator\Engine\Bots\BotRegistry;
 use App\Simulator\SimulatorControl;
@@ -28,23 +27,11 @@ beforeEach(function () {
     app(SimulatorControl::class)->addBot('B0SIM00001', 'chaos');
 });
 
-function retryPendingPushes(): void
-{
-    $pending = PriceDecision::query()
-        ->where('outcome', 'reprice')
-        ->whereDoesntHave('pushes', fn ($q) => $q->whereIn('status', ['succeeded', 'failed', 'superseded', 'cancelled', 'blocked']))
-        ->pluck('id');
-
-    foreach ($pending as $id) {
-        app(PricePusher::class)->attempt(PriceDecision::query()->with('product')->findOrFail($id));
-    }
-}
-
 it('holds every guardrail, bounds reprices and never duplicates a decision with all five bots and injected errors', function () {
     $bots = DB::table('sim_offers')->whereNotNull('bot')->distinct()->pluck('bot')->sort()->values()->all();
     expect($bots)->toBe(collect((new BotRegistry)->keys())->sort()->values()->all());
 
-    app(HeadlessLoop::class)->run(TICKS, fn () => retryPendingPushes());
+    app(HeadlessLoop::class)->run(TICKS); // retries unfinished pushes after every tick
     $simSeconds = TICKS * (int) config('simulator.tick_seconds');
 
     // The injected errors really happened, and were retried.
