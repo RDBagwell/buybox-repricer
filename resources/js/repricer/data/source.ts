@@ -92,6 +92,8 @@ export interface DataSource {
     series: (productId: number) => Promise<Series>;
     /** Decisions after an id, oldest first (catch-up after a reconnect). */
     decisionsAfter: (afterId: number) => Promise<Decision[]>;
+    /** Live only: tells the server someone is watching, so the demo world keeps ticking. */
+    heartbeat?: () => Promise<void>;
     subscribe(
         handlers: StreamHandlers,
         onConnection: (state: ConnectionState) => void,

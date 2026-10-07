@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Simulator\Console\SimDaemonCommand;
+use Illuminate\Support\Facades\Cache;
 use Tests\Support\Market;
 
 /*
@@ -55,6 +57,16 @@ it('refuses dashboard reads to guests in operator mode and allows them in demo m
     config(['demo.enabled' => true]);
     $this->getJson(withProductId($uri))->assertOk();
 })->with('reads');
+
+it('keeps the simulator awake on a heartbeat, for viewers only', function () {
+    config(['demo.enabled' => false]);
+    $this->getJson('/api/heartbeat')->assertForbidden();
+    expect(Cache::get(SimDaemonCommand::HEARTBEAT_KEY))->toBeNull();
+
+    config(['demo.enabled' => true]);
+    $this->getJson('/api/heartbeat')->assertNoContent();
+    expect((int) Cache::get(SimDaemonCommand::HEARTBEAT_KEY))->toBeGreaterThan(time() - 5);
+});
 
 it('shows guests the welcome page in operator mode and the dashboard in demo mode', function () {
     config(['demo.enabled' => false]);

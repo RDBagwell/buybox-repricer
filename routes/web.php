@@ -32,6 +32,7 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::middleware('can:view-dashboard')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'state'])->name('dashboard');
         Route::get('decisions', [DashboardController::class, 'decisions'])->name('decisions');
+        Route::get('heartbeat', [DashboardController::class, 'ping'])->name('heartbeat');
         Route::get('products/{product}/series', [DashboardController::class, 'series'])->name('products.series');
         Route::get('simulator', [SimulatorController::class, 'show'])->name('simulator');
     });

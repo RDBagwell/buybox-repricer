@@ -47,6 +47,14 @@ class DashboardController extends Controller
         return response()->json($this->stateArray());
     }
 
+    /** Sent every 30s by a visible dashboard tab, so the demo world keeps ticking while watched. */
+    public function ping(): \Illuminate\Http\Response
+    {
+        $this->heartbeat();
+
+        return response()->noContent();
+    }
+
     public function decisions(Request $request): JsonResponse
     {
         $validated = $request->validate([

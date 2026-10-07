@@ -14,6 +14,7 @@ import type { BuyBoxUpdate, DataSource, PushUpdate } from './source';
 
 export const MAX_DECISIONS = 150;
 export const MAX_POINTS = 600;
+export const HEARTBEAT_MS = 30_000;
 
 export interface DashboardModel {
     status: 'loading' | 'ready' | 'error';
@@ -260,6 +261,25 @@ export function useDashboard(
             void reload();
         }
     }, [initial, reload]);
+
+    // Keep the demo world ticking while this tab is visible (the simulator idles otherwise).
+    useEffect(() => {
+        if (!source.heartbeat) {
+            return;
+        }
+        const beat = () => {
+            if (document.visibilityState === 'visible') {
+                source.heartbeat?.().catch(() => undefined);
+            }
+        };
+        const timer = window.setInterval(beat, HEARTBEAT_MS);
+        document.addEventListener('visibilitychange', beat);
+
+        return () => {
+            window.clearInterval(timer);
+            document.removeEventListener('visibilitychange', beat);
+        };
+    }, [source]);
 
     useEffect(() => {
         return source.subscribe(

@@ -125,6 +125,13 @@ export class LiveSource implements DataSource {
         return get<Series>(`/api/products/${productId}/series?hours=3`);
     }
 
+    async heartbeat(): Promise<void> {
+        await fetch('/api/heartbeat', {
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json' },
+        });
+    }
+
     async decisionsAfter(afterId: number): Promise<Decision[]> {
         return (
             await get<{ decisions: Decision[] }>(
