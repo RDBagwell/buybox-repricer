@@ -10,6 +10,7 @@ final readonly class SimOffer
     /**
      * @param  array<string, int|string>  $botParams  static strategy parameters
      * @param  array<string, int|string>  $botMemory  state the bot carries between ticks
+     * @param  bool  $inStock  out-of-stock offers are invisible: no Buy Box, not in notifications
      */
     public function __construct(
         public string $sellerId,
@@ -22,6 +23,7 @@ final readonly class SimOffer
         public ?string $bot = null,
         public array $botParams = [],
         public array $botMemory = [],
+        public bool $inStock = true,
     ) {}
 
     public function landed(): Money
@@ -31,7 +33,7 @@ final readonly class SimOffer
 
     public function withPrice(Money $price): self
     {
-        return new self($this->sellerId, $price, $this->shipping, $this->fulfillment, $this->rating, $this->handlingDays, $this->sku, $this->bot, $this->botParams, $this->botMemory);
+        return new self($this->sellerId, $price, $this->shipping, $this->fulfillment, $this->rating, $this->handlingDays, $this->sku, $this->bot, $this->botParams, $this->botMemory, $this->inStock);
     }
 
     /**
@@ -39,7 +41,12 @@ final readonly class SimOffer
      */
     public function withMemory(array $memory): self
     {
-        return new self($this->sellerId, $this->price, $this->shipping, $this->fulfillment, $this->rating, $this->handlingDays, $this->sku, $this->bot, $this->botParams, $memory);
+        return new self($this->sellerId, $this->price, $this->shipping, $this->fulfillment, $this->rating, $this->handlingDays, $this->sku, $this->bot, $this->botParams, $memory, $this->inStock);
+    }
+
+    public function withStock(bool $inStock): self
+    {
+        return new self($this->sellerId, $this->price, $this->shipping, $this->fulfillment, $this->rating, $this->handlingDays, $this->sku, $this->bot, $this->botParams, $this->botMemory, $inStock);
     }
 
     /**

@@ -32,7 +32,7 @@ final readonly class BotContext
     /** Lowest landed price among the other offers, or null if alone. */
     public function lowestOtherLanded(): ?Money
     {
-        $others = array_filter($this->listing->offers, fn (SimOffer $o) => $o->sellerId !== $this->self->sellerId);
+        $others = array_filter($this->listing->activeOffers(), fn (SimOffer $o) => $o->sellerId !== $this->self->sellerId);
 
         return $others === [] ? null : Money::min(...array_map(fn (SimOffer $o) => $o->landed(), array_values($others)));
     }

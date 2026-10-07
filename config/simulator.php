@@ -12,6 +12,9 @@
 
 return [
 
+    // The seed a reset (and the demo) starts from.
+    'seed' => (int) env('SIM_SEED', 42),
+
     // Market time starts here on a fresh database. One tick advances it by tick_seconds.
     'epoch' => env('SIM_EPOCH', '2026-01-01T00:00:00Z'),
     'tick_seconds' => (int) env('SIM_TICK_SECONDS', 15),
@@ -86,6 +89,7 @@ return [
                 ['seller' => 'our_store', 'sku' => 'CBL-USBC-2M', 'price' => 1199, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 98, 'handling_days' => 1],
                 ['seller' => 'STEADY-CO', 'price' => 1249, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 97, 'handling_days' => 1, 'bot' => 'anchor', 'params' => ['price' => 1249]],
                 ['seller' => 'CABLE-KING', 'price' => 899, 'shipping' => 399, 'fulfillment' => 'merchant', 'rating' => 92, 'handling_days' => 3, 'bot' => 'anchor', 'params' => ['price' => 899]],
+                ['seller' => 'MATCH-MART', 'price' => 1299, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 96, 'handling_days' => 1, 'bot' => 'matcher', 'params' => ['floor' => 999, 'every' => 3]],
             ],
         ],
         [
@@ -94,6 +98,7 @@ return [
                 ['seller' => 'our_store', 'sku' => 'BRD-BAM-L', 'price' => 3499, 'shipping' => 499, 'fulfillment' => 'merchant', 'rating' => 98, 'handling_days' => 2],
                 ['seller' => 'PENNYWISE', 'price' => 3699, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 94, 'handling_days' => 2, 'bot' => 'penny_pincher', 'params' => ['floor' => 3299, 'every' => 5]],
                 ['seller' => 'TIMBERLINE', 'price' => 3899, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 99, 'handling_days' => 1, 'bot' => 'penny_pincher', 'params' => ['floor' => 3599, 'every' => 6]],
+                ['seller' => 'WILDCARD', 'price' => 3799, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 90, 'handling_days' => 2, 'bot' => 'chaos', 'params' => ['min' => 3399, 'max' => 4199, 'every' => 4, 'react_bps' => 5000]],
             ],
         ],
         [
@@ -101,6 +106,7 @@ return [
             'offers' => [
                 ['seller' => 'our_store', 'sku' => 'BTL-INS-750', 'price' => 2199, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 98, 'handling_days' => 1],
                 ['seller' => 'STEADY-CO', 'price' => 2249, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 97, 'handling_days' => 1, 'bot' => 'anchor', 'params' => ['price' => 2249]],
+                ['seller' => 'NAPTIME', 'price' => 1999, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 95, 'handling_days' => 1, 'bot' => 'sleeper', 'params' => ['price' => 1999, 'awake_ticks' => 80, 'asleep_ticks' => 60]],
             ],
         ],
     ],

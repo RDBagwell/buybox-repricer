@@ -7,14 +7,14 @@ use App\Simulator\SimulationRunner;
 use Illuminate\Database\Seeder;
 
 /**
- * Builds the simulated marketplace from config/simulator.php (seed 42) if it does not exist yet.
+ * Builds the simulated marketplace from config/simulator.php (the configured seed) if it does not exist yet.
  */
 class MarketplaceSeeder extends Seeder
 {
     public function run(WorldRepository $worlds, SimulationRunner $runner): void
     {
         if (! $worlds->exists()) {
-            $runner->reset(42);
+            $runner->reset((int) config('simulator.seed', 42));
         }
     }
 }

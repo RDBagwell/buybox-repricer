@@ -46,12 +46,23 @@ class MarketServiceProvider extends ServiceProvider
         ));
         $this->app->alias(RedisStreamNotifications::class, NotificationPublisher::class);
 
-        $this->app->singleton(FaultInjector::class, fn () => new FaultInjector(
+        $this->app->singleton(FaultInjector::class, fn (Application $app) => new FaultInjector(
             Redis::connection(),
             (int) config('simulator.faults.seed'),
             (int) config('simulator.faults.http_429_bps'),
             (int) config('simulator.faults.http_503_bps'),
             (int) config('simulator.faults.retry_after_ms'),
+            'sim:faults:seq',
+            // Dashboard-controlled rates (sim_state) win over config once the world exists.
+            function () use ($app): array {
+                $worlds = $app->make(WorldRepository::class);
+                if (! $worlds->exists()) {
+                    return [(int) config('simulator.faults.http_429_bps'), (int) config('simulator.faults.http_503_bps')];
+                }
+                $c = $worlds->controls();
+
+                return [max($c['fault_429_bps'], (int) config('simulator.faults.http_429_bps')), max($c['fault_503_bps'], (int) config('simulator.faults.http_503_bps'))];
+            },
         ));
 
         // --- The boundary ----------------------------------------------------------

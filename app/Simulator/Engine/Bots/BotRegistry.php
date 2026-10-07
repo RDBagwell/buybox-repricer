@@ -15,7 +15,7 @@ final class BotRegistry
     /**
      * @param  list<class-string<CompetitorBot>>  $classes
      */
-    public function __construct(array $classes = [PennyPincher::class, Anchor::class])
+    public function __construct(array $classes = [PennyPincher::class, Anchor::class, Matcher::class, Sleeper::class, Chaos::class])
     {
         foreach ($classes as $class) {
             $this->bots[$class::key()] = new $class;

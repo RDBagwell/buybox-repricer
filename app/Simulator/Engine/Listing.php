@@ -27,6 +27,17 @@ final class Listing
         ksort($this->offers, SORT_STRING);
     }
 
+    /**
+     * Offers currently for sale (in stock). Only these compete for the Buy Box or appear in
+     * notifications.
+     *
+     * @return array<string, SimOffer>
+     */
+    public function activeOffers(): array
+    {
+        return array_filter($this->offers, fn (SimOffer $o) => $o->inStock);
+    }
+
     public function buyBoxOffer(): ?SimOffer
     {
         return $this->buyBoxSellerId === null ? null : $this->offer($this->buyBoxSellerId);

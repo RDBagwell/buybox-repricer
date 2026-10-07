@@ -3,6 +3,7 @@
 namespace App\Repricer\Outbound;
 
 use App\Repricer\Events\PricePushed;
+use App\Repricer\Events\ProductUpdated;
 use App\Repricer\Market\MarketAdapter;
 use App\Repricer\Market\MarketApiException;
 use App\Repricer\Market\Operation;
@@ -69,6 +70,7 @@ final class PricePusher
         if ($this->settings->dryRun()) {
             return $this->terminal($decision, $product, PushStatus::Cancelled, $nextAttempt, ['reason' => 'Dry run turned on before the push.']);
         }
+        // The breaker also reports a product paused since the decision was made.
         if (($why = $this->breaker->openReason($product)) !== null) {
             return $this->terminal($decision, $product, PushStatus::Blocked, $nextAttempt, ['reason' => $why]);
         }
@@ -104,6 +106,8 @@ final class PricePusher
                 'last_price_change_at' => $result->appliedAt,
             ])->save();
         });
+
+        ProductUpdated::dispatch($product->id);
 
         return PushAttempt::done('pushed');
     }

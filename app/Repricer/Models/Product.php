@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property Money $shipping
  * @property Money $current_price
  * @property bool $paused
+ * @property string|null $paused_reason
+ * @property CarbonImmutable|null $paused_at market time
  * @property CarbonImmutable|null $last_price_change_at market time
  * @property-read PricingRule|null $rule
  */
@@ -34,6 +36,7 @@ class Product extends Model
             'shipping' => MoneyCast::class,
             'current_price' => MoneyCast::class,
             'paused' => 'boolean',
+            'paused_at' => 'immutable_datetime',
             'last_price_change_at' => 'immutable_datetime',
         ];
     }
