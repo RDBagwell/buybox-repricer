@@ -114,9 +114,22 @@ final class DashboardQuery
             ->orderByDesc('event_time')->orderByDesc('id')
             ->limit($maxPoints)->get()->reverse()->values();
 
+        // Carry the last known prices into the window: a quiet listing still has a chart.
+        $before = PriceDecision::query()
+            ->with(['snapshots' => fn ($q) => $q->orderBy('id')])
+            ->where('product_id', $product->id)
+            ->where('event_time', '<', $since)
+            ->whereHas('snapshots')
+            ->orderByDesc('event_time')->orderByDesc('id')
+            ->first();
+        if ($before !== null) {
+            $decisions->prepend($before);
+        }
+
         $points = [];
         foreach ($decisions as $d) {
-            $point = ['t' => $d->event_time->getTimestamp() * 1000, 'decision_id' => $d->id, 'buybox' => null, 'prices' => []];
+            $t = max($d->event_time->getTimestamp(), $since->getTimestamp()) * 1000;
+            $point = ['t' => $t, 'decision_id' => $d->id, 'buybox' => null, 'prices' => []];
             foreach ($d->snapshots as $s) {
                 $key = $s->is_ours ? 'ours' : $s->seller;
                 $point['prices'][$key] = $s->price->cents + $s->shipping->cents;

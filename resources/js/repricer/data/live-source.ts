@@ -183,12 +183,31 @@ export class LiveSource implements DataSource {
             disconnected: 'offline',
             failed: 'offline',
         };
-        const listener = ({ current }: { current: string }) =>
-            onConnection(map[current] ?? 'reconnecting');
+        // pusher-js stops retrying after a "disconnected"/"failed" close (e.g. Reverb restarting,
+        // a proxy dropping the socket). Keep trying with capped backoff unless we closed it.
+        let closing = false;
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+        let retryDelay = 1000;
+        const listener = ({ current }: { current: string }) => {
+            const down = current === 'disconnected' || current === 'failed';
+            onConnection(
+                down ? 'reconnecting' : (map[current] ?? 'reconnecting'),
+            );
+            if (current === 'connected') {
+                retryDelay = 1000;
+            }
+            if (down && !closing) {
+                clearTimeout(retryTimer);
+                retryTimer = setTimeout(() => pusher.connect(), retryDelay);
+                retryDelay = Math.min(retryDelay * 2, 15_000);
+            }
+        };
         pusher.connection.bind('state_change', listener);
         onConnection(map[pusher.connection.state] ?? 'connecting');
 
         return () => {
+            closing = true;
+            clearTimeout(retryTimer);
             pusher.connection.unbind('state_change', listener);
             echo.leaveAllChannels();
             echo.disconnect();
