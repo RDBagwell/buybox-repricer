@@ -23,16 +23,18 @@ test('shows the repricer fighting for the Buy Box within 10 seconds', async ({
         timeout: 10_000,
     });
 
-    // And it is live: a new decision streams in.
+    // And it is live: a new decision streams in. Cooldown skips are hidden by default, so a
+    // new decision shows either as a new top row or in the toggle's hidden count.
     const feed = page.getByRole('list', {
         name: 'Pricing decisions, newest first',
     });
-    const firstBefore = await feed.locator('li').first().textContent();
+    const cooldown = page.locator('label', { hasText: 'Hide cooldown skips' });
+    const activity = async () =>
+        `${await feed.locator('li').first().textContent()}|${await cooldown.textContent()}`;
+    const before = await activity();
     await expect
-        .poll(async () => feed.locator('li').first().textContent(), {
-            timeout: 10_000 - (Date.now() - started),
-        })
-        .not.toBe(firstBefore);
+        .poll(activity, { timeout: 10_000 - (Date.now() - started) })
+        .not.toBe(before);
 
     expect(Date.now() - started).toBeLessThan(10_000);
 });
