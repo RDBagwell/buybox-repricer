@@ -15,8 +15,8 @@ return [
 
     'enabled' => (bool) env('DEMO_MODE', false),
 
-    // Rebuild the whole demo world (database included) this often. Nothing a visitor does
-    // survives a reset.
+    // Rebuild the whole demo world (database included) this often, 5–30 minutes. Nothing a
+    // visitor does survives a reset. 0 turns the scheduled reset off; the boot reset still runs.
     'reset_minutes' => (int) env('DEMO_RESET_MINUTES', 30),
 
     // Ticks run synchronously after a reset so the page opens on a price war already under way.
