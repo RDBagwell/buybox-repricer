@@ -10,12 +10,14 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { centsToInput, formatCents } from '../lib/money';
+import { centsToInput, formatCents, parseMoney } from '../lib/money';
 import type { RuleForm, RulePayload } from '../lib/rule-validation';
+import { presetRule } from '../lib/rule-presets';
 import { validateRule } from '../lib/rule-validation';
 import type { RulePreviewResult } from '../lib/trace';
 import { describePreview } from '../lib/trace';
 import type { Product } from '../types';
+import { RulePresetButtons } from './rule-presets';
 
 interface Props {
     product: Product | null;
@@ -179,6 +181,20 @@ export function RuleEditor({ product, onClose, onSave, onPreview }: Props) {
                     }}
                     className="space-y-4"
                 >
+                    <RulePresetButtons
+                        onPick={(key) => {
+                            setTouched(true);
+                            setServerErrors({});
+                            setForm({
+                                ...form,
+                                ...presetRule(key, {
+                                    cost: product.cost,
+                                    fees: product.fees,
+                                    ceiling: parseMoney(form.ceiling),
+                                }),
+                            });
+                        }}
+                    />
                     <div className="space-y-1.5">
                         <Label htmlFor="rule-strategy">Strategy</Label>
                         <select

@@ -213,3 +213,25 @@ test('the rule editor previews what the draft rules would do, live', async ({
     });
     await page.getByRole('button', { name: 'Cancel' }).click();
 });
+
+test('a rule preset fills the editor from the product’s own cost and fees', async ({
+    page,
+    isMobile,
+}) => {
+    await page.goto('/');
+    await page
+        .getByRole('button', {
+            name: isMobile ? 'Rules' : /Edit rules for Stainless French Press/,
+        })
+        .first()
+        .click();
+    await page.getByRole('button', { name: 'Margin-first' }).click();
+    // $14.00 cost + $4.35 fees, 30% margin ($5.51): the floor sits at the margin floor.
+    await expect(page.getByLabel('Floor')).toHaveValue('23.86');
+    await expect(page.getByLabel('Strategy')).toHaveValue('match_lowest');
+    await expect(page.getByText(/is below the margin floor/)).toHaveCount(0);
+    await expect(page.getByTestId('rule-preview')).toContainText(
+        /would (set|keep) \$/,
+    );
+    await page.getByRole('button', { name: 'Cancel' }).click();
+});

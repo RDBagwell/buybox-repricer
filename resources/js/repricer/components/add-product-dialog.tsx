@@ -11,8 +11,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { formatCents, parseMoney } from '../lib/money';
+import { centsToInput, formatCents, parseMoney } from '../lib/money';
+import { presetRule } from '../lib/rule-presets';
 import type { ProductForm, ProductPayload } from '../lib/product-validation';
+import { RulePresetButtons } from './rule-presets';
 import {
     blankProductForm,
     MAX_COMPETITORS,
@@ -243,6 +245,37 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                         <legend className="text-sm font-medium">
                             Pricing rules
                         </legend>
+                        <RulePresetButtons
+                            disabled={cost === null || fees === null}
+                            onPick={(key) => {
+                                if (cost === null || fees === null) {
+                                    return;
+                                }
+                                const rule = presetRule(key, {
+                                    cost,
+                                    fees,
+                                    ceiling: parseMoney(form.ceiling),
+                                });
+                                // Keep the starting price inside the new floor..ceiling.
+                                const floor = parseMoney(rule.floor) ?? 0;
+                                const ceiling = parseMoney(rule.ceiling) ?? 0;
+                                const price = parseMoney(form.price);
+                                const clamped =
+                                    price === null
+                                        ? floor
+                                        : Math.min(
+                                              ceiling,
+                                              Math.max(floor, price),
+                                          );
+                                setTouched((t) => new Set(t));
+                                setServerErrors({});
+                                setForm({
+                                    ...form,
+                                    ...rule,
+                                    price: centsToInput(clamped),
+                                });
+                            }}
+                        />
                         <div className="space-y-1.5">
                             <Label htmlFor="product-strategy">Strategy</Label>
                             <select
