@@ -15,6 +15,9 @@ Route::get('/', function () {
         : inertia('welcome');
 })->name('home');
 
+// Replay mode: a recorded run played in the browser. Public in every mode (it is recorded output).
+Route::inertia('replay', 'repricer/replay')->name('replay');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'page'])->name('dashboard');
 });

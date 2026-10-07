@@ -9,7 +9,8 @@
         "check": "vp check",
         "check:fix": "vp check --fix",
         "types:check": "tsc --noEmit",
-        "test": "vp test run"
+        "test": "vp test run",
+        "build:replay": "vp build --config vite.replay.config.ts && mkdir -p dist-replay/recordings && cp public/recordings/demo.json dist-replay/recordings/demo.json && cp dist-replay/replay.html dist-replay/index.html && cp public/favicon.svg dist-replay/favicon.svg"
     },
     "dependencies": {
         "@inertiajs/react": "^3.0.0",

@@ -29,18 +29,19 @@ export class ReplaySource implements DataSource {
     }
 
     series(productId: number): Promise<Series> {
-        const p = this.recording.initial.products.find(
-            (x) => x.id === productId,
-        );
+        const recorded = this.recording.series[String(productId)];
+        if (recorded) {
+            return Promise.resolve(structuredClone(recorded));
+        }
         const now = new Date(this.recording.initial.market_time).getTime();
 
         return Promise.resolve({
             product_id: productId,
             now,
             from: now,
-            floor: p?.rule ? p.rule.floor + p.shipping : null,
-            ceiling: p?.rule ? p.rule.ceiling + p.shipping : null,
-            margin_floor: p?.rule ? p.rule.margin_floor + p.shipping : null,
+            floor: null,
+            ceiling: null,
+            margin_floor: null,
             points: [],
         });
     }

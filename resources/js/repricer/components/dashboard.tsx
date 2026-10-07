@@ -34,6 +34,15 @@ interface Props {
     initial: DashboardState | null;
     /** Replay mode: link to the live demo, shown in the banner. */
     liveUrl?: string;
+    /** Replay mode: the live server answered (it may have been asleep). */
+    liveReady?: boolean;
+    /** Replay mode: how the recording was made. */
+    replayMeta?: {
+        seed: number;
+        ticks: number;
+        command: string;
+        recorded_at: string;
+    };
 }
 
 const CONNECTION: Record<
@@ -165,7 +174,14 @@ function busiestProduct(
     return best?.[0] ?? state.products[0]?.id ?? null;
 }
 
-export function Dashboard({ source, config, initial, liveUrl }: Props) {
+export function Dashboard({
+    source,
+    config,
+    initial,
+    liveUrl,
+    liveReady,
+    replayMeta,
+}: Props) {
     const { model, loadSeries, setProduct, setSettings, setSimulator, reload } =
         useDashboard(source, initial, config.our_seller_id);
     const data = model.data;
@@ -349,16 +365,23 @@ export function Dashboard({ source, config, initial, liveUrl }: Props) {
                             icon={<PlayCircle className="size-4" />}
                         >
                             <strong>Replay of a recorded simulation.</strong>{' '}
-                            Everything here is real output from a seeded run,
-                            played back in your browser.{' '}
-                            {liveUrl && (
-                                <a
-                                    className="font-medium underline"
-                                    href={liveUrl}
-                                >
-                                    Open the live demo
-                                </a>
-                            )}
+                            Real output from a seeded run
+                            {replayMeta
+                                ? ` (seed ${replayMeta.seed}, ${replayMeta.ticks} ticks)`
+                                : ''}
+                            , played back in your browser; controls are
+                            read-only.{' '}
+                            {liveUrl &&
+                                (liveReady ? (
+                                    <a
+                                        className="font-semibold underline"
+                                        href={liveUrl}
+                                    >
+                                        The live demo is ready: open it
+                                    </a>
+                                ) : (
+                                    <span>Waking the live demo server…</span>
+                                ))}
                         </Banner>
                     )}
                     {killed && (

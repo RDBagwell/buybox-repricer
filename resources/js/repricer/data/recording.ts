@@ -1,4 +1,4 @@
-import type { DashboardState } from '../types';
+import type { DashboardState, Series } from '../types';
 
 /** A recorded simulation run (produced by `php artisan sim:record`), played by ReplaySource. */
 export interface Recording {
@@ -13,5 +13,6 @@ export interface Recording {
         app_version?: string;
     };
     initial: DashboardState;
+    series: Record<string, Series>;
     frames: { t: number; events: { type: string; payload: unknown }[] }[];
 }
