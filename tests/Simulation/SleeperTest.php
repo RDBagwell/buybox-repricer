@@ -1,7 +1,6 @@
 <?php
 
 use App\Demo\HeadlessLoop;
-use App\Repricer\Models\OfferSnapshot;
 use App\Repricer\Models\PriceDecision;
 use App\Repricer\Models\Product;
 use Illuminate\Support\Facades\DB;
