@@ -4,6 +4,7 @@ import { validateRule } from './rule-validation';
 
 /** The add-product form: money as text ("14.99"), the rule as in the rule editor. */
 export interface ProductForm extends RuleForm {
+    channel: 'buybox' | 'open';
     title: string;
     sku: string;
     cost: string;
@@ -14,6 +15,7 @@ export interface ProductForm extends RuleForm {
 }
 
 export interface ProductPayload extends RulePayload {
+    channel: 'buybox' | 'open';
     title: string;
     sku: string;
     cost: number;
@@ -31,6 +33,7 @@ const MAX_CENTS = 10_000_000;
 /** Sensible starting values, so a demo product can be added in a few seconds. */
 export function blankProductForm(): ProductForm {
     return {
+        channel: 'buybox',
         title: '',
         sku: '',
         cost: '10.00',
@@ -102,6 +105,7 @@ export function validateProduct(form: ProductForm): {
     const rule = validateRule(form, {
         cost: errors.cost || cost === null ? 0 : cost,
         fees: errors.fees || fees === null ? 0 : fees,
+        channel: form.channel,
     });
     Object.assign(errors, rule.errors);
 
@@ -129,6 +133,7 @@ export function validateProduct(form: ProductForm): {
         errors,
         payload: {
             ...rule.payload,
+            channel: form.channel,
             title,
             sku,
             cost,

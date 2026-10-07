@@ -58,7 +58,12 @@ export const PRESETS: Preset[] = [
  */
 export function presetRule(
     key: PresetKey,
-    product: { cost: number; fees: number; ceiling: number | null },
+    product: {
+        cost: number;
+        fees: number;
+        ceiling: number | null;
+        channel?: 'buybox' | 'open';
+    },
 ): Pick<
     RuleForm,
     | 'strategy'
@@ -82,7 +87,11 @@ export function presetRule(
             : floor + Math.ceil((floor * 2500) / 10_000);
 
     return {
-        strategy: p.strategy,
+        // No Buy Box on open listings: "beat the holder" becomes "beat the lowest".
+        strategy:
+            product.channel === 'open' && p.strategy === 'beat_buybox'
+                ? 'beat_lowest'
+                : p.strategy,
         offset: centsToInput(p.offset),
         floor: centsToInput(floor),
         ceiling: centsToInput(ceiling),

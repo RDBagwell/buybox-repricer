@@ -499,9 +499,13 @@ export function Dashboard({
                                             selectedProduct.current_price,
                                         )}{' '}
                                         ·{' '}
-                                        {selectedProduct.buybox.ours
-                                            ? 'we hold the Buy Box'
-                                            : `Buy Box: ${selectedProduct.buybox.winner ?? 'none'}`}
+                                        {selectedProduct.channel === 'open'
+                                            ? selectedProduct.rank
+                                                ? `open listings: price rank ${selectedProduct.rank.position} of ${selectedProduct.rank.of}`
+                                                : 'open listings'
+                                            : selectedProduct.buybox.ours
+                                              ? 'we hold the Buy Box'
+                                              : `Buy Box: ${selectedProduct.buybox.winner ?? 'none'}`}
                                     </span>
                                 )
                             }
@@ -530,6 +534,7 @@ export function Dashboard({
                                 ))}
                             </div>
                             <PriceChart
+                                hasBuyBox={selectedProduct?.channel !== 'open'}
                                 series={
                                     selected !== null
                                         ? model.series[selected]

@@ -6,12 +6,14 @@ use App\Demo\SimulatorPanel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Dashboard\StoreProductRequest;
 use App\Http\Requests\Dashboard\UpdatePricingRuleRequest;
+use App\Repricer\Catalog\Channel;
 use App\Repricer\Dashboard\DashboardQuery;
 use App\Repricer\Events\ProductUpdated;
 use App\Repricer\Market\MarketAdapter;
 use App\Repricer\Models\Product;
 use App\Repricer\Pricing\RulePreview;
 use App\Repricer\Safety\AuditLog;
+use App\Simulator\Engine\Listing;
 use App\Simulator\Engine\SimOffer;
 use App\Simulator\SimulatorControl;
 use App\Support\Fulfillment;
@@ -56,6 +58,7 @@ class ProductController extends Controller
             // Explicit field lists: nothing outside the validated fields can be written.
             $product = Product::query()->create([
                 'asin' => $asin,
+                'channel' => $data['channel'] ?? Channel::BuyBox->value,
                 'sku' => $data['sku'],
                 'title' => $data['title'],
                 'cost' => $data['cost'],
@@ -65,7 +68,7 @@ class ProductController extends Controller
             ]);
             $product->rule()->create(array_intersect_key($data, array_flip($ruleFields)));
             $this->audit->record('product.created', Actor::of($request), $product->id, null,
-                array_intersect_key($data, array_flip(['sku', 'title', 'cost', 'fees', 'shipping', 'price', ...$ruleFields])) + ['asin' => $asin, 'competitors' => $competitors]);
+                array_intersect_key($data, array_flip(['sku', 'title', 'cost', 'fees', 'shipping', 'price', ...$ruleFields])) + ['asin' => $asin, 'channel' => $data['channel'] ?? Channel::BuyBox->value, 'competitors' => $competitors]);
 
             return $product;
         });
@@ -79,7 +82,7 @@ class ProductController extends Controller
                 98,
                 1,
                 $product->sku,
-            ), $competitors);
+            ), $competitors, $product->channel->hasBuyBox() ? Listing::BUYBOX : Listing::OPEN);
         } catch (InvalidArgumentException $e) {
             // Nothing has been decided for it yet: take the catalogue entry back out.
             DB::transaction(function () use ($product) {

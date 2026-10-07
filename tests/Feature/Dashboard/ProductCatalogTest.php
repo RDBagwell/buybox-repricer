@@ -28,13 +28,13 @@ it('adds a product: catalogue entry, rule, a simulated listing with our offer an
     $r = $this->postJson('/api/products', newProduct(['competitors' => ['penny_pincher', 'anchor']]))->assertCreated();
 
     $product = Product::query()->where('sku', 'MUG-CER-12')->firstOrFail();
-    expect($product->asin)->toBe('B0SIM00006') // after the five seeded listings
+    expect($product->asin)->toBe('B0SIM00007') // after the six seeded listings
         ->and($product->current_price->cents)->toBe(1499)
         ->and($product->rule?->floor->cents)->toBe(899)
         ->and($r->json('product.archived'))->toBeFalse()
-        ->and(collect($r->json('simulator.listings'))->firstWhere('asin', 'B0SIM00006')['offers'])->toHaveCount(3);
+        ->and(collect($r->json('simulator.listings'))->firstWhere('asin', 'B0SIM00007')['offers'])->toHaveCount(3);
 
-    $sellers = DB::table('sim_offers')->where('asin', 'B0SIM00006')->orderBy('seller_id')->pluck('bot', 'seller_id')->all();
+    $sellers = DB::table('sim_offers')->where('asin', 'B0SIM00007')->orderBy('seller_id')->pluck('bot', 'seller_id')->all();
     expect($sellers)->toBe(['ANCHOR-1' => 'anchor', 'OUR-STORE' => null, 'PENNY_PINCHER-1' => 'penny_pincher']);
 
     $audit = AuditEntry::query()->where('action', 'product.created')->sole();
@@ -71,10 +71,10 @@ it('validates new products on the server', function (array $override, string $fi
 ]);
 
 it('caps the catalogue size on the public demo', function () {
-    config(['demo.max_products' => 6]);
+    config(['demo.max_products' => 7]);
     $this->postJson('/api/products', newProduct())->assertCreated();
     $this->postJson('/api/products', newProduct(['sku' => 'MUG-CER-2']))
-        ->assertUnprocessable()->assertJsonPath('message', 'The public demo holds at most 6 products. Archive one first.');
+        ->assertUnprocessable()->assertJsonPath('message', 'The public demo holds at most 7 products. Archive one first.');
 });
 
 it('archives instead of deleting: stops repricing, leaves the simulator, keeps the history', function () {
@@ -103,15 +103,15 @@ it('archives instead of deleting: stops repricing, leaves the simulator, keeps t
 });
 
 it('never reuses an archived product\'s ASIN for a new one', function () {
-    $last = Product::query()->where('asin', 'B0SIM00005')->firstOrFail();
+    $last = Product::query()->where('asin', 'B0SIM00006')->firstOrFail();
     $this->postJson("/api/products/{$last->id}/archive", ['confirm' => true])->assertOk();
 
     $this->postJson('/api/products', newProduct())->assertCreated();
-    expect(Product::query()->where('sku', 'MUG-CER-12')->value('asin'))->toBe('B0SIM00006');
+    expect(Product::query()->where('sku', 'MUG-CER-12')->value('asin'))->toBe('B0SIM00007');
 });
 
 it('does not count archived products against the demo cap', function () {
-    config(['demo.max_products' => 5]);
+    config(['demo.max_products' => 6]);
     $this->postJson('/api/products', newProduct())->assertUnprocessable();
     $this->postJson('/api/products/'.Market::product()->id.'/archive', ['confirm' => true])->assertOk();
     $this->postJson('/api/products', newProduct())->assertCreated();

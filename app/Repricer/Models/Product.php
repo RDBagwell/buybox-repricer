@@ -2,6 +2,7 @@
 
 namespace App\Repricer\Models;
 
+use App\Repricer\Catalog\Channel;
 use App\Repricer\Models\Casts\MoneyCast;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -13,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * @property int $id
  * @property string $asin
+ * @property Channel $channel
  * @property string $sku
  * @property string $title
  * @property Money $cost
@@ -38,6 +40,7 @@ class Product extends Model
             'shipping' => MoneyCast::class,
             'current_price' => MoneyCast::class,
             'paused' => 'boolean',
+            'channel' => Channel::class,
             'paused_at' => 'immutable_datetime',
             'archived_at' => 'immutable_datetime',
             'last_price_change_at' => 'immutable_datetime',

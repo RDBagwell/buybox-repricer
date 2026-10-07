@@ -37,7 +37,7 @@ function integer(value: string): number | null {
  */
 export function validateRule(
     form: RuleForm,
-    product: Pick<Product, 'cost' | 'fees'>,
+    product: Pick<Product, 'cost' | 'fees'> & { channel?: Product['channel'] },
 ): { errors: RuleErrors; payload: RulePayload | null } {
     const errors: RuleErrors = {};
 
@@ -81,6 +81,9 @@ export function validateRule(
         !['beat_lowest', 'match_lowest', 'beat_buybox'].includes(form.strategy)
     ) {
         errors.strategy = 'Choose a strategy.';
+    } else if (product.channel === 'open' && form.strategy === 'beat_buybox') {
+        errors.strategy =
+            'There is no Buy Box on an open-listing marketplace: beat or match the lowest price instead.';
     }
 
     if (

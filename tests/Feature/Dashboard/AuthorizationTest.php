@@ -75,7 +75,7 @@ it('shows guests the welcome page in operator mode and the dashboard in demo mod
     config(['demo.enabled' => false]);
     $this->get('/')->assertInertia(fn ($page) => $page->component('welcome'));
     config(['demo.enabled' => true]);
-    $this->get('/')->assertInertia(fn ($page) => $page->component('repricer/dashboard')->has('initial.products', 5));
+    $this->get('/')->assertInertia(fn ($page) => $page->component('repricer/dashboard')->has('initial.products', 6));
 });
 
 it('rate-limits mutations per visitor', function () {

@@ -3,9 +3,12 @@
 namespace App\Repricer\Dashboard;
 
 use App\Repricer\Models\BuyBoxHistory;
+use App\Repricer\Models\OfferSnapshot;
+use App\Repricer\Models\PriceDecision;
 use App\Repricer\Models\PricePush;
 use App\Repricer\Models\Product;
 use App\Repricer\Outbound\PushStatus;
+use App\Repricer\Pricing\DecisionStatus;
 use App\Support\Money;
 use App\Support\Rounding;
 use DateTimeImmutable;
@@ -40,12 +43,15 @@ final class ProductPresenter
             'paused' => $p->paused,
             'paused_reason' => $p->paused_reason,
             'archived' => $p->isArchived(),
+            'channel' => $p->channel->value,
+            // Open-listing marketplaces have no Buy Box: where we stand on price is what counts.
+            'rank' => $p->channel->hasBuyBox() ? null : self::priceRank($p),
             'buybox' => [
                 'winner' => $holder?->winner,
                 'ours' => $holder !== null && $holder->winner === config('market.seller_id'),
                 'since' => $holder?->changed_at->format(DATE_ATOM),
             ],
-            'win_rate_24h_bps' => self::winRate($p->id, $marketNow, 24 * 3600),
+            'win_rate_24h_bps' => $p->channel->hasBuyBox() ? self::winRate($p->id, $marketNow, 24 * 3600) : null,
             'reprices_last_hour' => self::repricesSince($p->id, $marketNow->modify('-1 hour')),
             'breaker_limit' => $this->breakerLimit,
             'rule' => $rule === null ? null : [
@@ -100,6 +106,28 @@ final class ProductPresenter
         }
 
         return $total === 0 ? 0 : Money::divide($won * 10_000, $total, Rounding::HalfUp);
+    }
+
+    /**
+     * Our position by landed price among the comparable listings in the latest snapshot
+     * (1 = cheapest; ties share the better position), using our current price.
+     *
+     * @return array{position: int, of: int}|null
+     */
+    public static function priceRank(Product $p): ?array
+    {
+        $decision = PriceDecision::query()->where('product_id', $p->id)
+            ->where('outcome', '!=', DecisionStatus::Stale->value)
+            ->whereHas('snapshots')->latest('id')->first();
+        if ($decision === null) {
+            return null;
+        }
+
+        $ours = $p->current_price->cents + $p->shipping->cents;
+        $others = $decision->snapshots()->where('is_ours', false)->get()
+            ->map(fn (OfferSnapshot $s) => $s->price->cents + $s->shipping->cents);
+
+        return ['position' => 1 + $others->filter(fn (int $landed) => $landed < $ours)->count(), 'of' => $others->count() + 1];
     }
 
     public static function repricesSince(int $productId, DateTimeImmutable $since): int

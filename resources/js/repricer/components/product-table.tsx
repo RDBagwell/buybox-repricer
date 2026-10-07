@@ -31,7 +31,41 @@ interface Props {
     onArchive: (p: Product) => Promise<void>;
 }
 
+/** "Open listings" marker for products on a marketplace with no Buy Box. */
+export function ChannelBadge({ p }: { p: Pick<Product, 'channel'> }) {
+    if (p.channel !== 'open') {
+        return null;
+    }
+
+    return (
+        <span
+            className="ml-1.5 inline-flex rounded bg-violet-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-violet-900 dark:bg-violet-900/40 dark:text-violet-100"
+            title="Open-listing marketplace: every seller lists separately and there is no Buy Box. What counts is our price against comparable listings."
+        >
+            Open listings
+        </span>
+    );
+}
+
 function BuyBoxStatus({ p }: { p: Product }) {
+    if (p.channel === 'open') {
+        return p.rank ? (
+            <span
+                className={cn(
+                    'tabular-nums',
+                    p.rank.position === 1
+                        ? 'font-medium text-[#0072B2] dark:text-sky-400'
+                        : 'text-muted-foreground',
+                )}
+                title="Our price position among comparable listings (1 = cheapest)"
+            >
+                {p.rank.position === 1 ? 'Cheapest' : `#${p.rank.position}`} of{' '}
+                {p.rank.of}
+            </span>
+        ) : (
+            <span className="text-muted-foreground">—</span>
+        );
+    }
     if (p.buybox.ours) {
         return (
             <span className="inline-flex items-center gap-1 font-medium text-[#0072B2] dark:text-sky-400">
@@ -124,7 +158,12 @@ export function ProductTable({
                             <th className="py-2 pr-3 text-right font-medium">
                                 Price
                             </th>
-                            <th className="py-2 pr-3 font-medium">Buy Box</th>
+                            <th
+                                className="py-2 pr-3 font-medium"
+                                title="Who holds the Buy Box; on open-listing marketplaces, our price rank instead"
+                            >
+                                Buy Box / rank
+                            </th>
                             <th
                                 className="py-2 pr-3 text-right font-medium"
                                 title="Share of the last 24 market hours we held the Buy Box"
@@ -152,7 +191,10 @@ export function ProductTable({
                                 )}
                             >
                                 <td className="py-2.5 pr-3">
-                                    <div className="font-medium">{p.title}</div>
+                                    <div className="font-medium">
+                                        {p.title}
+                                        <ChannelBadge p={p} />
+                                    </div>
                                     <div className="text-xs text-muted-foreground">
                                         {p.sku} · {p.asin}
                                     </div>
@@ -164,7 +206,9 @@ export function ProductTable({
                                     <BuyBoxStatus p={p} />
                                 </td>
                                 <td className="py-2.5 pr-3 text-right tabular-nums">
-                                    {formatBps(p.win_rate_24h_bps)}
+                                    {p.win_rate_24h_bps === null
+                                        ? '—'
+                                        : formatBps(p.win_rate_24h_bps)}
                                 </td>
                                 <td
                                     className={cn(
@@ -262,7 +306,10 @@ export function ProductTable({
                     >
                         <div className="flex items-start justify-between gap-2">
                             <div>
-                                <div className="font-medium">{p.title}</div>
+                                <div className="font-medium">
+                                    {p.title}
+                                    <ChannelBadge p={p} />
+                                </div>
                                 <div className="text-xs text-muted-foreground">
                                     {p.sku}
                                 </div>
@@ -274,7 +321,9 @@ export function ProductTable({
                         <dl className="mt-2 grid grid-cols-3 gap-2 text-xs">
                             <div>
                                 <dt className="text-muted-foreground">
-                                    Buy Box
+                                    {p.channel === 'open'
+                                        ? 'Price rank'
+                                        : 'Buy Box'}
                                 </dt>
                                 <dd>
                                     <BuyBoxStatus p={p} />
@@ -285,7 +334,9 @@ export function ProductTable({
                                     Win 24h
                                 </dt>
                                 <dd className="tabular-nums">
-                                    {formatBps(p.win_rate_24h_bps)}
+                                    {p.win_rate_24h_bps === null
+                                        ? '—'
+                                        : formatBps(p.win_rate_24h_bps)}
                                 </dd>
                             </div>
                             <div>

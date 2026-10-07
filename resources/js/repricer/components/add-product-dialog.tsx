@@ -236,6 +236,45 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                         }
                     }}
                 >
+                    <div className="space-y-1.5">
+                        <Label htmlFor="product-channel">
+                            Marketplace type
+                        </Label>
+                        <select
+                            id="product-channel"
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground [&>option]:bg-background [&>option]:text-foreground"
+                            value={form.channel}
+                            onChange={(e) => {
+                                const channel = e.target
+                                    .value as ProductForm['channel'];
+                                setTouched((t) => new Set(t).add('channel'));
+                                setForm({
+                                    ...form,
+                                    channel,
+                                    // There is no holder to beat on open listings.
+                                    strategy:
+                                        channel === 'open' &&
+                                        form.strategy === 'beat_buybox'
+                                            ? 'beat_lowest'
+                                            : form.strategy,
+                                });
+                            }}
+                        >
+                            <option value="buybox">
+                                Buy Box marketplace: sellers share one listing
+                            </option>
+                            <option value="open">
+                                Open listings, no Buy Box (social-commerce
+                                style)
+                            </option>
+                        </select>
+                        <p className="text-xs text-muted-foreground">
+                            {form.channel === 'open'
+                                ? 'Every seller lists separately; the repricer competes on price against comparable listings.'
+                                : 'Sellers compete for one featured offer on a shared listing.'}
+                        </p>
+                    </div>
+
                     <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <legend className="sr-only">Product</legend>
                         {PRODUCT_FIELDS.map(renderField)}
@@ -255,6 +294,7 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                                     cost,
                                     fees,
                                     ceiling: parseMoney(form.ceiling),
+                                    channel: form.channel,
                                 });
                                 // Keep the starting price inside the new floor..ceiling.
                                 const floor = parseMoney(rule.floor) ?? 0;
@@ -286,8 +326,14 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                                     set('strategy', e.target.value)
                                 }
                             >
-                                <option value="beat_buybox">
+                                <option
+                                    value="beat_buybox"
+                                    disabled={form.channel === 'open'}
+                                >
                                     Beat the Buy Box holder
+                                    {form.channel === 'open'
+                                        ? ' (needs a Buy Box)'
+                                        : ''}
                                 </option>
                                 <option value="beat_lowest">
                                     Beat the lowest price

@@ -125,6 +125,10 @@ final readonly class Simulation
 
     public function recomputeBuyBox(Listing $listing, int $tick, int $marketTimeMs): ?BuyBoxChange
     {
+        if ($listing->model === Listing::OPEN) {
+            return null; // open listings have no featured offer to win
+        }
+
         $result = $this->scorer->decide($listing->activeOffers(), $listing->buyBoxSellerId);
         if ($result->winner === $listing->buyBoxSellerId) {
             return null;

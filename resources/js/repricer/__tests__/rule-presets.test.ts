@@ -48,3 +48,19 @@ describe('presetRule', () => {
         expect([...margins].sort((a, b) => a - b)).toEqual(margins);
     });
 });
+
+describe('presets on open-listing marketplaces', () => {
+    it('never pick "beat the Buy Box holder" where there is no Buy Box', () => {
+        const prod = {
+            cost: 900,
+            fees: 400,
+            ceiling: 2999,
+            channel: 'open' as const,
+        };
+        for (const p of PRESETS) {
+            const rule = presetRule(p.key, prod);
+            expect(rule.strategy).not.toBe('beat_buybox');
+            expect(validateRule(rule, prod).errors).toEqual({});
+        }
+    });
+});

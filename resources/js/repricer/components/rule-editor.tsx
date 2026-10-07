@@ -191,6 +191,7 @@ export function RuleEditor({ product, onClose, onSave, onPreview }: Props) {
                                     cost: product.cost,
                                     fees: product.fees,
                                     ceiling: parseMoney(form.ceiling),
+                                    channel: product.channel,
                                 }),
                             });
                         }}
@@ -203,8 +204,14 @@ export function RuleEditor({ product, onClose, onSave, onPreview }: Props) {
                             value={form.strategy}
                             onChange={(e) => set('strategy', e.target.value)}
                         >
-                            <option value="beat_buybox">
+                            <option
+                                value="beat_buybox"
+                                disabled={product.channel === 'open'}
+                            >
                                 Beat the Buy Box holder
+                                {product.channel === 'open'
+                                    ? ' (needs a Buy Box)'
+                                    : ''}
                             </option>
                             <option value="beat_lowest">
                                 Beat the lowest price

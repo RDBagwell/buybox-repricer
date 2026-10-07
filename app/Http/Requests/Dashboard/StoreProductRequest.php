@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Dashboard;
 
+use App\Repricer\Catalog\Channel;
 use App\Simulator\Engine\Bots\BotRegistry;
 use App\Support\Money;
 use Illuminate\Foundation\Http\FormRequest;
@@ -47,6 +48,7 @@ class StoreProductRequest extends FormRequest
             'fees' => ['required', 'integer', 'min:0', 'max:'.$max],
             'shipping' => ['required', 'integer', 'min:0', 'max:100000'],
             'price' => ['required', 'integer', 'min:1', 'max:'.$max],
+            'channel' => ['sometimes', Rule::enum(Channel::class)],
             'competitors' => ['present', 'array', 'max:'.self::MAX_COMPETITORS],
             'competitors.*' => ['string', 'distinct', Rule::in(app(BotRegistry::class)->keys())],
         ] + UpdatePricingRuleRequest::ruleFields();
@@ -80,6 +82,9 @@ class StoreProductRequest extends FormRequest
             $price = (int) $this->input('price');
             UpdatePricingRuleRequest::checkBounds($validator, $floor, $ceiling,
                 (int) $this->input('cost'), (int) $this->input('fees'), (int) $this->input('min_margin'));
+
+            UpdatePricingRuleRequest::checkStrategyFitsChannel($validator, (string) $this->input('strategy'),
+                Channel::tryFrom((string) $this->input('channel', 'buybox')) ?? Channel::BuyBox);
 
             if ($validator->errors()->isEmpty() && ($price < $floor || $price > $ceiling)) {
                 $validator->errors()->add('price', 'The starting price ('.Money::cents($price).') must be between the floor ('.Money::cents($floor).') and the ceiling ('.Money::cents($ceiling).').');

@@ -49,7 +49,7 @@ final class WorldRepository
      * Rebuild the world from the scenario with a new seed. Market time never goes backwards:
      * a reset keeps the current clock (or starts at the epoch on a fresh database).
      *
-     * @param  list<array{asin: string, title: string, offers: list<array<string, mixed>>}>  $scenario
+     * @param  list<array{asin: string, title: string, model?: string, offers: list<array<string, mixed>>}>  $scenario
      */
     public function reset(array $scenario, int $seed, string $ourSellerId, string $epoch, int $tickSeconds, BuyBoxScorer $scorer): World
     {
@@ -68,7 +68,7 @@ final class WorldRepository
             $now = now();
             foreach ($world->listings as $listing) {
                 $this->db->table(self::LISTINGS)->insert([
-                    'asin' => $listing->asin, 'title' => $listing->title,
+                    'asin' => $listing->asin, 'title' => $listing->title, 'model' => $listing->model,
                     'buybox_seller_id' => $listing->buyBoxSellerId,
                     'created_at' => $now, 'updated_at' => $now,
                 ]);
@@ -106,7 +106,7 @@ final class WorldRepository
         $listings = [];
         $titles = $this->db->table(self::LISTINGS)->orderBy('asin')->get();
         foreach ($titles as $row) {
-            $listings[(string) $row->asin] = new Listing((string) $row->asin, (string) $row->title, [], $row->buybox_seller_id === null ? null : (string) $row->buybox_seller_id);
+            $listings[(string) $row->asin] = new Listing((string) $row->asin, (string) $row->title, [], $row->buybox_seller_id === null ? null : (string) $row->buybox_seller_id, (string) ($row->model ?? Listing::BUYBOX));
         }
 
         foreach ($this->db->table(self::OFFERS)->orderBy('asin')->orderBy('seller_id')->get() as $row) {
@@ -187,7 +187,7 @@ final class WorldRepository
     {
         $now = now();
         $this->db->table(self::LISTINGS)->insert([
-            'asin' => $listing->asin, 'title' => $listing->title,
+            'asin' => $listing->asin, 'title' => $listing->title, 'model' => $listing->model,
             'buybox_seller_id' => $listing->buyBoxSellerId,
             'created_at' => $now, 'updated_at' => $now,
         ]);
