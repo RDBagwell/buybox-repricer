@@ -11,6 +11,15 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <testsuite name="Contract">
+            <directory>tests/Contract</directory>
+        </testsuite>
+        <testsuite name="Simulation">
+            <directory>tests/Simulation</directory>
+        </testsuite>
+        <testsuite name="Arch">
+            <directory>tests/Arch</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
@@ -22,10 +31,15 @@
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        <env name="CACHE_STORE" value="redis"/>
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="buybox_test"/>
         <env name="DB_URL" value=""/>
+        <env name="REDIS_PREFIX" value="buybox-test:"/>
+        <env name="REDIS_DB" value="14"/>
+        <env name="REDIS_CACHE_DB" value="15"/>
+        <env name="SIM_FAULT_429_BPS" value="0"/>
+        <env name="SIM_FAULT_503_BPS" value="0"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
