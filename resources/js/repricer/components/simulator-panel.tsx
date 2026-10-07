@@ -2,6 +2,7 @@ import { PackageX, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatCents } from '../lib/money';
+import { oursFirst } from '../lib/offers';
 import type { SimulatorState } from '../types';
 
 interface Props {
@@ -250,7 +251,7 @@ export function SimulatorPanel({ simulator, readOnly, run, actions }: Props) {
                             </div>
                         </div>
                         <ul className="space-y-1">
-                            {l.offers.map((o) => (
+                            {oursFirst(l.offers).map((o) => (
                                 <li
                                     key={o.seller}
                                     className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs"
