@@ -208,7 +208,7 @@ export function SimulatorPanel({ simulator, readOnly, run, actions }: Props) {
                             <div className="flex shrink-0 items-center gap-1">
                                 <select
                                     aria-label={`Bot to add to ${l.title}`}
-                                    className="h-8 rounded-md border border-input bg-transparent px-2 text-xs"
+                                    className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground [&>option]:bg-background [&>option]:text-foreground"
                                     value={addType[l.asin] ?? 'matcher'}
                                     disabled={disabled}
                                     onChange={(e) =>
@@ -258,7 +258,7 @@ export function SimulatorPanel({ simulator, readOnly, run, actions }: Props) {
                                     <span
                                         className={
                                             o.seller === 'ours'
-                                                ? 'font-semibold text-[#0072B2]'
+                                                ? 'font-semibold text-[#0072B2] dark:text-sky-400'
                                                 : 'font-medium'
                                         }
                                     >

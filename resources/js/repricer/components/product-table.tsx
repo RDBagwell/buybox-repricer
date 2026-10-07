@@ -26,7 +26,7 @@ interface Props {
 function BuyBoxStatus({ p }: { p: Product }) {
     if (p.buybox.ours) {
         return (
-            <span className="inline-flex items-center gap-1 font-medium text-[#0072B2] dark:text-sky-300">
+            <span className="inline-flex items-center gap-1 font-medium text-[#0072B2] dark:text-sky-300 dark:text-sky-400">
                 <Trophy className="size-3.5" aria-hidden /> Ours
             </span>
         );

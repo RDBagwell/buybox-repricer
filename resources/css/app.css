@@ -98,6 +98,8 @@
 }
 
 .dark {
+    /* Native controls (select menus, scrollbars) follow the theme, not only the OS. */
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.145 0 0);

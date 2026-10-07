@@ -152,7 +152,7 @@ export function RuleEditor({ product, onClose, onSave }: Props) {
                         <Label htmlFor="rule-strategy">Strategy</Label>
                         <select
                             id="rule-strategy"
-                            className="h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground [&>option]:bg-background [&>option]:text-foreground"
                             value={form.strategy}
                             onChange={(e) => set('strategy', e.target.value)}
                         >

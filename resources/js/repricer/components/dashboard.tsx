@@ -23,6 +23,7 @@ import type {
 import { AuditList } from './audit-list';
 import { DecisionFeed } from './decision-feed';
 import { KillSwitch } from './kill-switch';
+import { ThemeToggle } from './theme-toggle';
 import { PriceChart } from './price-chart';
 import { ProductTable } from './product-table';
 import { RuleEditor } from './rule-editor';
@@ -314,6 +315,7 @@ export function Dashboard({
                         </span>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
+                        <ThemeToggle />
                         <Button
                             variant="outline"
                             size="sm"
