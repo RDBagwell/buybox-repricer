@@ -2,7 +2,14 @@
 name: buybox
 
 x-app: &app
+  # Every service that runs the app builds the image locally (cached after the first build),
+  # so Compose never tries to pull "buybox-repricer-app" from a registry.
   image: buybox-repricer-app
+  build:
+    context: .
+    dockerfile: docker/php/Dockerfile
+    target: app
+  pull_policy: build
   env_file: .env
   environment:
     DB_CONNECTION: pgsql
@@ -49,10 +56,6 @@ services:
   # One-shot: migrate and seed (idempotent), then exit. Everything else waits for it.
   migrate:
     <<: *app
-    build:
-      context: .
-      dockerfile: docker/php/Dockerfile
-      target: app
     command: sh -c "php artisan migrate --force && php artisan db:seed --force"
     restart: "no"
 
