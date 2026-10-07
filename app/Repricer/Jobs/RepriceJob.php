@@ -49,8 +49,8 @@ final class RepriceJob implements ShouldQueue
     public function handle(RepricingService $service): void
     {
         $product = Product::query()->with('rule')->find($this->productId);
-        if ($product === null) {
-            return;
+        if ($product === null || $product->isArchived()) {
+            return; // archived after this job was queued: it has left the catalogue
         }
 
         $notification = OfferChangeNotification::fromArray($this->notification);

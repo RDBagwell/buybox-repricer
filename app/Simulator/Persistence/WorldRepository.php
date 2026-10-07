@@ -182,6 +182,35 @@ final class WorldRepository
         );
     }
 
+    /** A new listing with its offers (ours included). */
+    public function addListing(Listing $listing): void
+    {
+        $now = now();
+        $this->db->table(self::LISTINGS)->insert([
+            'asin' => $listing->asin, 'title' => $listing->title,
+            'buybox_seller_id' => $listing->buyBoxSellerId,
+            'created_at' => $now, 'updated_at' => $now,
+        ]);
+        foreach ($listing->offers as $offer) {
+            $this->db->table(self::OFFERS)->insert($this->offerRow($listing->asin, $offer) + ['created_at' => $now, 'updated_at' => $now]);
+        }
+    }
+
+    /** Remove a listing and its offers. Its event log (sim_events) stays. */
+    public function removeListing(string $asin): bool
+    {
+        $this->db->table(self::OFFERS)->where('asin', $asin)->delete();
+
+        return $this->db->table(self::LISTINGS)->where('asin', $asin)->delete() > 0;
+    }
+
+    /** @return list<string> */
+    public function listingAsins(): array
+    {
+        /** @var list<string> */
+        return $this->db->table(self::LISTINGS)->orderBy('asin')->pluck('asin')->map(fn ($a) => (string) $a)->values()->all();
+    }
+
     public function removeOffer(string $asin, string $sellerId): void
     {
         $this->db->table(self::OFFERS)->where('asin', $asin)->where('seller_id', $sellerId)->whereNotNull('bot')->delete();

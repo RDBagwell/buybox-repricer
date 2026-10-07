@@ -30,6 +30,16 @@ class UpdatePricingRuleRequest extends FormRequest
      */
     public function rules(): array
     {
+        return self::ruleFields();
+    }
+
+    /**
+     * The pricing-rule fields, shared with the add-product form (StoreProductRequest).
+     *
+     * @return array<string, mixed>
+     */
+    public static function ruleFields(): array
+    {
         return [
             'strategy' => ['required', Rule::enum(Strategy::class)],
             'offset' => ['required', 'integer', 'min:0', 'max:10000'],
@@ -45,6 +55,21 @@ class UpdatePricingRuleRequest extends FormRequest
     }
 
     /**
+     * floor <= ceiling, and floor >= cost + fees + minimum margin (all integer cents).
+     */
+    public static function checkBounds(Validator $validator, int $floor, int $ceiling, int $cost, int $fees, int $minMargin): void
+    {
+        $marginFloor = $cost + $fees + $minMargin;
+
+        if ($floor > $ceiling) {
+            $validator->errors()->add('floor', 'The floor ('.Money::cents($floor).') must not be above the ceiling ('.Money::cents($ceiling).').');
+        }
+        if ($floor < $marginFloor) {
+            $validator->errors()->add('floor', 'The floor ('.Money::cents($floor).') is below the margin floor ('.Money::cents($marginFloor).' = cost + fees + minimum margin).');
+        }
+    }
+
+    /**
      * @return array<int, \Closure(Validator): void>
      */
     public function after(): array
@@ -56,16 +81,8 @@ class UpdatePricingRuleRequest extends FormRequest
 
             /** @var Product $product */
             $product = $this->route('product');
-            $floor = (int) $this->input('floor');
-            $ceiling = (int) $this->input('ceiling');
-            $marginFloor = $product->cost->cents + $product->fees->cents + (int) $this->input('min_margin');
-
-            if ($floor > $ceiling) {
-                $validator->errors()->add('floor', 'The floor ('.Money::cents($floor).') must not be above the ceiling ('.Money::cents($ceiling).').');
-            }
-            if ($floor < $marginFloor) {
-                $validator->errors()->add('floor', 'The floor ('.Money::cents($floor).') is below the margin floor ('.Money::cents($marginFloor).' = cost + fees + minimum margin).');
-            }
+            self::checkBounds($validator, (int) $this->input('floor'), (int) $this->input('ceiling'),
+                $product->cost->cents, $product->fees->cents, (int) $this->input('min_margin'));
         }];
     }
 }

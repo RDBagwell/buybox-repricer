@@ -151,3 +151,40 @@ test('shows a dropped connection and catches up when it returns', async ({
         })
         .not.toBe(lastSeen);
 });
+
+test('adds a product through the form, sees it repriced, then archives it', async ({
+    page,
+    isMobile,
+}) => {
+    const sku = `E2E-${isMobile ? 'P' : 'D'}-${Date.now().toString(36).toUpperCase()}`;
+    const title = `Test Kettle ${sku}`;
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Add product' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Title').fill(title);
+    await dialog.getByLabel('SKU').fill(sku);
+
+    // The client refuses a floor below this product's own margin floor before anything is sent.
+    await dialog.getByLabel('Floor').fill('12.00');
+    await expect(dialog.getByText(/is below the margin floor/)).toBeVisible();
+    await dialog.getByLabel('Floor').fill('16.50');
+
+    await dialog.getByRole('button', { name: 'Add product' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText(`${title} added`)).toBeVisible();
+
+    // It is in the catalogue, has its own listing, and the repricer decides on it.
+    const feed = page.getByRole('list', {
+        name: 'Pricing decisions, newest first',
+    });
+    await expect(feed.getByText(title).first()).toBeVisible({
+        timeout: 15_000,
+    });
+
+    await page.getByRole('button', { name: `Archive ${title}` }).click();
+    await page.getByRole('button', { name: 'Archive product' }).click();
+    await expect(page.getByText(`${title} archived`)).toBeVisible();
+    await expect(
+        page.getByRole('button', { name: `Archive ${title}` }),
+    ).toHaveCount(0);
+});

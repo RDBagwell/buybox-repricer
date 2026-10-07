@@ -40,27 +40,98 @@ final class SimulatorControl
                 throw new InvalidArgumentException("A listing can have at most {$this->maxOffersPerListing} offers.");
             }
 
-            $reference = $listing->buyBoxOffer()?->landed() ?? Money::min(...array_map(fn (SimOffer $o) => $o->landed(), array_values($listing->offers)));
-            $n = 1;
-            while ($listing->offer(strtoupper($type).'-'.$n) !== null) {
-                $n++;
-            }
-
-            $offer = new SimOffer(
-                strtoupper($type).'-'.$n,
-                $reference->plus(Money::cents(50)),
-                Money::zero(),
-                Fulfillment::Merchant,
-                93,
-                2,
-                null,
-                $type,
-                $this->defaultParams($type, $reference),
-            );
+            $offer = $this->newBot($listing, $type);
             $listing->put($offer);
 
             return $offer;
         }, 'competitor_added');
+    }
+
+    /**
+     * Open a new listing with our offer and the given competitor bots, then publish its first
+     * offer-change notification so the repricer decides on it straight away.
+     *
+     * @param  list<string>  $botTypes
+     */
+    public function addListing(string $asin, string $title, SimOffer $ours, array $botTypes): void
+    {
+        foreach ($botTypes as $type) {
+            if (! in_array($type, $this->bots->keys(), true)) {
+                throw new InvalidArgumentException("Unknown bot [{$type}].");
+            }
+        }
+
+        $event = $this->worlds->db()->transaction(function () use ($asin, $title, $ours, $botTypes) {
+            $world = $this->worlds->load(lock: true);
+            if ($world->listing($asin) !== null) {
+                throw new InvalidArgumentException("Listing {$asin} already exists.");
+            }
+
+            $listing = new Listing($asin, $title, [$ours->sellerId => $ours]);
+            foreach ($botTypes as $type) {
+                $listing->put($this->newBot($listing, $type));
+            }
+            $this->simulation->recomputeBuyBox($listing, $world->tick, $world->clock->nowMs);
+            $this->worlds->addListing($listing);
+
+            $event = AnyOfferChanged::fromListing($listing, $world->tick, $world->clock->nowMs, 'operator', 'listing_added')
+                ->withEventId((string) Str::uuid7());
+            $this->worlds->recordEvent($event, $this->worlds->currentRun());
+
+            return $event;
+        });
+
+        $this->publisher->publish($event);
+    }
+
+    /** Take a listing off the marketplace (its offers go with it). */
+    public function removeListing(string $asin): bool
+    {
+        return $this->worlds->db()->transaction(function () use ($asin) {
+            $this->worlds->load(lock: true); // serialise against ticks
+
+            return $this->worlds->removeListing($asin);
+        });
+    }
+
+    /**
+     * The next unused simulated ASIN (B0SIM00001, B0SIM00002, ...), never reusing one that
+     * $alsoTaken (e.g. archived products) still refers to.
+     *
+     * @param  list<string>  $alsoTaken
+     */
+    public function nextAsin(array $alsoTaken = []): string
+    {
+        $max = 0;
+        foreach ([...$this->worlds->listingAsins(), ...$alsoTaken] as $asin) {
+            if (preg_match('/^B0SIM(\d{5})$/', $asin, $m) === 1) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+
+        return sprintf('B0SIM%05d', $max + 1);
+    }
+
+    /** A competitor bot entering a listing near its current price, with type-specific defaults. */
+    private function newBot(Listing $listing, string $type): SimOffer
+    {
+        $reference = $listing->buyBoxOffer()?->landed() ?? Money::min(...array_map(fn (SimOffer $o) => $o->landed(), array_values($listing->offers)));
+        $n = 1;
+        while ($listing->offer(strtoupper($type).'-'.$n) !== null) {
+            $n++;
+        }
+
+        return new SimOffer(
+            strtoupper($type).'-'.$n,
+            $reference->plus(Money::cents(50)),
+            Money::zero(),
+            Fulfillment::Merchant,
+            93,
+            2,
+            null,
+            $type,
+            $this->defaultParams($type, $reference),
+        );
     }
 
     public function removeBot(string $asin, string $sellerId): void

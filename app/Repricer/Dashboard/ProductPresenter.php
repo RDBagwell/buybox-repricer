@@ -39,6 +39,7 @@ final class ProductPresenter
             'margin_bps' => $p->current_price->cents > 0 ? Money::divide($marginCents * 10_000, $p->current_price->cents, Rounding::HalfUp) : 0,
             'paused' => $p->paused,
             'paused_reason' => $p->paused_reason,
+            'archived' => $p->isArchived(),
             'buybox' => [
                 'winner' => $holder?->winner,
                 'ours' => $holder !== null && $holder->winner === config('market.seller_id'),

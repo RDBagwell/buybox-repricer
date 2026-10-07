@@ -68,6 +68,8 @@ export interface Product {
     margin_bps: number;
     paused: boolean;
     paused_reason: string | null;
+    /** Archived products stay in the list (for decision history) but leave the table. */
+    archived?: boolean;
     buybox: { winner: string | null; ours: boolean; since: string | null };
     win_rate_24h_bps: number;
     reprices_last_hour: number;

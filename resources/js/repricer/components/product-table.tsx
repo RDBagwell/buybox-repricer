@@ -1,4 +1,11 @@
-import { CircleAlert, Pause, Pencil, Play, Trophy } from 'lucide-react';
+import {
+    Archive,
+    CircleAlert,
+    Pause,
+    Pencil,
+    Play,
+    Trophy,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,12 +28,13 @@ interface Props {
     onPause: (p: Product) => Promise<void>;
     onResume: (p: Product) => Promise<void>;
     onEditRule: (p: Product) => void;
+    onArchive: (p: Product) => Promise<void>;
 }
 
 function BuyBoxStatus({ p }: { p: Product }) {
     if (p.buybox.ours) {
         return (
-            <span className="inline-flex items-center gap-1 font-medium text-[#0072B2] dark:text-sky-300 dark:text-sky-400">
+            <span className="inline-flex items-center gap-1 font-medium text-[#0072B2] dark:text-sky-400">
                 <Trophy className="size-3.5" aria-hidden /> Ours
             </span>
         );
@@ -90,15 +98,17 @@ export function ProductTable({
     onPause,
     onResume,
     onEditRule,
+    onArchive,
 }: Props) {
     const [resuming, setResuming] = useState<Product | null>(null);
+    const [archiving, setArchiving] = useState<Product | null>(null);
     const [busy, setBusy] = useState(false);
 
     if (products.length === 0) {
         return (
             <p className="py-8 text-center text-sm text-muted-foreground">
-                No products yet. Seed the catalogue with{' '}
-                <code>php artisan db:seed</code>.
+                No products yet. Add one with the button above, or seed the
+                catalogue with <code>php artisan db:seed</code>.
             </p>
         );
     }
@@ -216,6 +226,21 @@ export function ProductTable({
                                             <Pencil className="size-3.5" />{' '}
                                             Rules
                                         </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="size-8 text-muted-foreground"
+                                            disabled={readOnly}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setArchiving(p);
+                                            }}
+                                            title="Archive this product"
+                                            aria-label={`Archive ${p.title}`}
+                                        >
+                                            <Archive className="size-3.5" />
+                                        </Button>
                                     </div>
                                 </td>
                             </tr>
@@ -297,6 +322,20 @@ export function ProductTable({
                             >
                                 <Pencil className="size-3.5" /> Rules
                             </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="ml-auto h-8 text-muted-foreground"
+                                disabled={readOnly}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setArchiving(p);
+                                }}
+                                aria-label={`Archive ${p.title}`}
+                            >
+                                <Archive className="size-3.5" /> Archive
+                            </Button>
                         </div>
                     </li>
                 ))}
@@ -335,6 +374,46 @@ export function ProductTable({
                             }}
                         >
                             I have reviewed it, resume
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={archiving !== null}
+                onOpenChange={(o) => !o && setArchiving(null)}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Archive {archiving?.title}?</DialogTitle>
+                        <DialogDescription>
+                            It stops repricing and leaves the marketplace
+                            simulation. Its decisions and audit history are kept
+                            (they are append-only), and archiving is recorded in
+                            the audit log. This can't be undone from the
+                            dashboard.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setArchiving(null)}
+                        >
+                            Keep it
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            disabled={busy}
+                            onClick={async () => {
+                                if (archiving) {
+                                    setBusy(true);
+                                    await onArchive(archiving);
+                                    setBusy(false);
+                                    setArchiving(null);
+                                }
+                            }}
+                        >
+                            Archive product
                         </Button>
                     </DialogFooter>
                 </DialogContent>
