@@ -116,6 +116,10 @@ jobs:
         run: npm run types:check
 
       - name: Vitest
+        # Vitest boots Vite with the Laravel plugin, which refuses dev servers when CI is set.
+        # No HMR server is served here, so the check does not apply.
+        env:
+          LARAVEL_BYPASS_ENV_CHECK: '1'
         run: npm test
 
       - name: Replay build (GitHub Pages bundle)
