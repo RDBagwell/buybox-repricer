@@ -3,6 +3,7 @@
 namespace App\Support\RateLimiting;
 
 use Illuminate\Redis\Connections\Connection;
+use Illuminate\Redis\Connections\PhpRedisConnection;
 
 /**
  * Atomic token bucket in Redis, implemented as GCRA (generic cell rate algorithm): one key per
@@ -43,6 +44,12 @@ LUA;
     {
         $now = $this->clock === null ? '' : (string) ($this->clock)();
 
-        return (int) $this->redis->eval(self::LUA, 1, $this->prefix.$bucket, $burst, $refillMs, $now);
+        $redis = $this->redis;
+        if (! $redis instanceof PhpRedisConnection) {
+            throw new \RuntimeException('RedisTokenBucket needs the phpredis client.');
+        }
+
+        // Laravel's connection-level eval(script, numKeys, ...args) applies the key prefix.
+        return (int) $redis->eval(self::LUA, 1, $this->prefix.$bucket, $burst, $refillMs, $now);
     }
 }

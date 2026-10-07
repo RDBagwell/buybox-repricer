@@ -10,7 +10,7 @@ use InvalidArgumentException;
 /**
  * Integer-cents column <-> Money. Refuses floats outright.
  *
- * @implements CastsAttributes<Money|null, Money|int|null>
+ * @implements CastsAttributes<Money|null, mixed>
  */
 final class MoneyCast implements CastsAttributes
 {

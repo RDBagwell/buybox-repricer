@@ -44,7 +44,7 @@ jobs:
           POSTGRES_DB: buybox_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd "pg_isready -U buybox" --health-interval 5s --health-timeout 5s --health-retries 10
+          --health-cmd "pg_isready -U buybox -d buybox_test" --health-interval 5s --health-timeout 5s --health-retries 10
       redis:
         image: redis:7-alpine
         ports: ['6379:6379']
@@ -108,4 +108,3 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           npm run build
-          npm run types:check

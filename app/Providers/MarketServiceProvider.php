@@ -33,7 +33,7 @@ class MarketServiceProvider extends ServiceProvider
         $this->app->singleton(TokenBucket::class, fn () => new RedisTokenBucket(Redis::connection()));
 
         // --- Simulator -------------------------------------------------------------
-        $this->app->singleton(BuyBoxScorer::class, fn () => BuyBoxScorer::fromConfig((array) config('simulator.buybox'))); // @phpstan-ignore argument.type
+        $this->app->singleton(BuyBoxScorer::class, fn () => BuyBoxScorer::fromConfig((array) config('simulator.buybox')));
         $this->app->singleton(BotRegistry::class, fn () => new BotRegistry);
         $this->app->bind(WorldRepository::class, fn () => new WorldRepository(DB::connection()));
 
@@ -63,7 +63,7 @@ class MarketServiceProvider extends ServiceProvider
             $app->make(TokenBucket::class),
             $app->make(FaultInjector::class),
             (string) config('market.seller_id'),
-            (array) config('simulator.quotas'), // @phpstan-ignore argument.type
+            (array) config('simulator.quotas'),
             (string) config('simulator.notifications.consumer'),
         ));
     }

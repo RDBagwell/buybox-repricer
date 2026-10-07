@@ -233,7 +233,7 @@ final class WorldRepository
         ];
     }
 
-    private function hydrateOffer(object $row): SimOffer
+    private function hydrateOffer(\stdClass $row): SimOffer
     {
         /** @var array<string, int|string> $params */
         $params = json_decode((string) $row->bot_params, true, flags: JSON_THROW_ON_ERROR);

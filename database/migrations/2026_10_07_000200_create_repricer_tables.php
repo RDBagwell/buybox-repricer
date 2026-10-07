@@ -138,7 +138,7 @@ return new class extends Migration
             SQL);
 
             foreach ($this->appendOnly as $table) {
-                DB::unprepared("CREATE TRIGGER {$table}_append_only BEFORE UPDATE OR DELETE ON {$table} FOR EACH ROW EXECUTE FUNCTION reject_audit_mutation();");
+                DB::statement("CREATE TRIGGER {$table}_append_only BEFORE UPDATE OR DELETE ON {$table} FOR EACH ROW EXECUTE FUNCTION reject_audit_mutation()");
             }
         }
     }

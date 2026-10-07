@@ -31,7 +31,7 @@ final class Scenario
                     handlingDays: (int) $o['handling_days'],
                     sku: isset($o['sku']) ? (string) $o['sku'] : null,
                     bot: isset($o['bot']) ? (string) $o['bot'] : null,
-                    botParams: (array) ($o['params'] ?? []), // @phpstan-ignore argument.type
+                    botParams: (array) ($o['params'] ?? []),
                 );
             }
             $listing = new Listing($def['asin'], $def['title'], $offers);
