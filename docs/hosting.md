@@ -46,15 +46,15 @@ GitHub Pages: the replay (dist-replay/), a recorded run that needs no server at 
 
 ## Limits you will notice
 
-| Limit | Effect on the demo |
-|---|---|
-| Free web services spin down after 15 minutes without inbound traffic, and spin-up takes about a minute | The first visitor after a quiet spell waits. The README links the GitHub Pages replay, which loads instantly and shows a live link once the server answers `/up`. |
-| 750 free instance hours per workspace per month | One always-on service would need 744. Because it sleeps when unwatched, it stays well under. |
-| 512 MB RAM, a fraction of a CPU (free instance) | Eight long-running processes fit (PHP is capped at 128 MB each, php-fpm at 4 children). The demo is capped at 50x speed and 6 offers per listing to stay inside the CPU. **Not load-tested on Render.** |
-| Hobby plan bandwidth: 5 GB/month included, then $0.15/GB (Render's 2026 workspace plans) | A dashboard session is small (a ~300 KB first load, then a few KB/s of WebSocket events). Watch the Render usage page if the link gets shared widely. |
-| Neon free: 0.5 GB storage, 100 compute-unit hours a month | The world is reset every 30 minutes, so storage stays tiny. The scheduler touches the database every minute, so Neon stays awake exactly as long as Render does (at most about 400 h/month at the smallest compute size). |
-| Render terminates TLS | `TRUSTED_PROXIES=*` is baked into the image so Laravel builds `https://` URLs. |
-| Spin-down kills the processes | Nothing is lost that matters: the boot reset rebuilds the world anyway. |
+| Limit                                                                                                  | Effect on the demo                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Free web services spin down after 15 minutes without inbound traffic, and spin-up takes about a minute | The first visitor after a quiet spell waits. The README links the GitHub Pages replay, which loads instantly and shows a live link once the server answers `/up`.                                                         |
+| 750 free instance hours per workspace per month                                                        | One always-on service would need 744. Because it sleeps when unwatched, it stays well under.                                                                                                                              |
+| 512 MB RAM, a fraction of a CPU (free instance)                                                        | Eight long-running processes fit (PHP is capped at 128 MB each, php-fpm at 4 children). The demo is capped at 50x speed and 6 offers per listing to stay inside the CPU. **Not load-tested on Render.**                   |
+| Hobby plan bandwidth: 5 GB/month included, then $0.15/GB (Render's 2026 workspace plans)               | A dashboard session is small (a ~300 KB first load, then a few KB/s of WebSocket events). Watch the Render usage page if the link gets shared widely.                                                                     |
+| Neon free: 0.5 GB storage, 100 compute-unit hours a month                                              | The world is reset every 30 minutes, so storage stays tiny. The scheduler touches the database every minute, so Neon stays awake exactly as long as Render does (at most about 400 h/month at the smallest compute size). |
+| Render terminates TLS                                                                                  | `TRUSTED_PROXIES=*` is baked into the image so Laravel builds `https://` URLs.                                                                                                                                            |
+| Spin-down kills the processes                                                                          | Nothing is lost that matters: the boot reset rebuilds the world anyway.                                                                                                                                                   |
 
 The Render and Neon figures come from their own pages as of October 2026
 ([Render free tier](https://render.com/docs/free), [Render workspace plans](https://render.com/docs/new-workspace-plans),
@@ -72,12 +72,12 @@ schedule. The shared world won:
 - The point of the demo is to watch a price war. A shared world that is always mid-war shows
   that better than an empty sandbox each visitor has to warm up.
 - The blast radius stays small:
-  - mutations are rate-limited per visitor IP (30/min; resets 2/min);
-  - world size and speed are capped (6 offers per listing, 50x, faults at most 30%);
-  - the kill switch and pauses need a confirmation;
-  - `demo:reset` runs every 30 minutes and on every boot. It TRUNCATEs every repricer and
-    simulator table, so nothing a visitor does survives a reset. Users, sessions and the
-    migrations table are untouched.
+    - mutations are rate-limited per visitor IP (30/min; resets 2/min);
+    - world size and speed are capped (6 offers per listing, 50x, faults at most 30%);
+    - the kill switch and pauses need a confirmation;
+    - `demo:reset` runs every 30 minutes and on every boot. It TRUNCATEs every repricer and
+      simulator table, so nothing a visitor does survives a reset. Users, sessions and the
+      migrations table are untouched.
 - Open dashboards receive a `world.reset` broadcast and reload, so nobody stares at a stale
   world.
 
@@ -88,24 +88,25 @@ schedule. The shared world won:
    (Or use Render's free Postgres, but it is deleted after 30 days.)
 2. **App key.** Run `php artisan key:generate --show` locally (or `make shell` then the same
    command) and copy the `base64:...` value. Never commit it.
-3. **Render.** Go to *New → Blueprint*, pick this repository, and Render reads `render.yaml`.
+3. **Render.** Go to _New → Blueprint_, pick this repository, and Render reads `render.yaml`.
    When prompted, fill in:
-   - `APP_KEY`: from step 2.
-   - `DB_URL`: from step 1.
-   - `APP_URL`: `https://<service-name>.onrender.com`. You can fill this in after the first
-     deploy tells you the URL, then redeploy.
+    - `APP_KEY`: from step 2.
+    - `DB_URL`: from step 1.
+    - `APP_URL`: `https://<service-name>.onrender.com`. You can fill this in after the first
+      deploy tells you the URL, then redeploy.
 
-   `REVERB_APP_KEY` and `REVERB_APP_SECRET` are generated by Render, and the image defaults
-   everything else (`DEMO_MODE=true`, `APP_DEBUG=false`, and so on).
+    `REVERB_APP_KEY` and `REVERB_APP_SECRET` are generated by Render, and the image defaults
+    everything else (`DEMO_MODE=true`, `APP_DEBUG=false`, and so on).
+
 4. **Check it.** Open the URL. The first boot migrates and primes the world, which takes up to
    a couple of minutes on a free instance. `/up` should answer 200. The dashboard should show
    "Live" and the French Press price war moving.
 5. **GitHub Pages (the replay).**
-   - In *Settings → Pages → Build and deployment*, set *Source* to "GitHub Actions".
-   - Optionally add a repository variable `LIVE_DEMO_URL` (*Settings → Secrets and
-     variables → Actions → Variables*) holding the Render URL, so the replay can offer
-     "the live demo is ready".
-   - Run the `pages` workflow, or push to `main`.
+    - In _Settings → Pages → Build and deployment_, set _Source_ to "GitHub Actions".
+    - Optionally add a repository variable `LIVE_DEMO_URL` (_Settings → Secrets and
+      variables → Actions → Variables_) holding the Render URL, so the replay can offer
+      "the live demo is ready".
+    - Run the `pages` workflow, or push to `main`.
 6. **Keep secrets out of git.** Only `.env.example` is committed. Every secret lives in
    Render's environment.
 

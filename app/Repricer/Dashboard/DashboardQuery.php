@@ -73,12 +73,12 @@ final class DashboardQuery
      */
     public function decisionsBefore(?int $beforeId, int $limit, ?int $productId = null): array
     {
-        return PriceDecision::query()
+        return array_values(PriceDecision::query()
             ->with(['snapshots' => fn ($q) => $q->orderBy('id'), 'pushes'])
             ->when($beforeId !== null, fn ($q) => $q->where('id', '<', $beforeId))
             ->when($productId !== null, fn ($q) => $q->where('product_id', $productId))
             ->latest('id')->limit(max(1, min(200, $limit)))->get()
-            ->map(fn (PriceDecision $d) => DecisionPresenter::present($d))->values()->all();
+            ->map(fn (PriceDecision $d) => DecisionPresenter::present($d))->all());
     }
 
     /**
@@ -88,11 +88,11 @@ final class DashboardQuery
      */
     public function decisionsAfter(int $afterId, int $limit = 200): array
     {
-        return PriceDecision::query()
+        return array_values(PriceDecision::query()
             ->with(['snapshots' => fn ($q) => $q->orderBy('id'), 'pushes'])
             ->where('id', '>', $afterId)
             ->orderBy('id')->limit(max(1, min(500, $limit)))->get()
-            ->map(fn (PriceDecision $d) => DecisionPresenter::present($d))->values()->all();
+            ->map(fn (PriceDecision $d) => DecisionPresenter::present($d))->all());
     }
 
     /**
@@ -157,7 +157,7 @@ final class DashboardQuery
      */
     public function audit(int $limit): array
     {
-        return AuditEntry::query()->latest('id')->limit($limit)->get()->map(fn (AuditEntry $a) => [
+        return array_values(AuditEntry::query()->latest('id')->limit($limit)->get()->map(fn (AuditEntry $a) => [
             'id' => $a->id,
             'action' => $a->action,
             'product_id' => $a->product_id,
@@ -166,7 +166,7 @@ final class DashboardQuery
             'before' => $a->before,
             'after' => $a->after,
             'market_time' => $a->market_time?->format(DATE_ATOM),
-        ])->values()->all();
+        ])->all());
     }
 
     public static function money(int $cents): string
