@@ -150,6 +150,15 @@ final class WorldRepository
         $this->db->table(self::LISTINGS)->where('asin', $listing->asin)->update(['buybox_seller_id' => $listing->buyBoxSellerId, 'updated_at' => $now]);
     }
 
+    /**
+     * @return array<string, string|null> ASIN => Buy Box seller
+     */
+    public function buyBoxWinners(): array
+    {
+        /** @var array<string, string|null> */
+        return $this->db->table(self::LISTINGS)->orderBy('asin')->pluck('buybox_seller_id', 'asin')->all();
+    }
+
     public function findAsinForSku(string $sellerId, string $sku): ?string
     {
         $asin = $this->db->table(self::OFFERS)->where('seller_id', $sellerId)->where('sku', $sku)->value('asin');

@@ -41,7 +41,16 @@ class SimRunCommand extends Command
         $bbChanges = 0;
         $events = 0;
         $moves = 0;
+        $winners = $worlds->buyBoxWinners();
         for ($i = 0; $i < $ticks; $i++) {
+            // Buy Box changes caused by price updates through the API (the repricer) since last tick.
+            foreach ($worlds->buyBoxWinners() as $asin => $winner) {
+                if (($winners[$asin] ?? null) !== $winner) {
+                    $bbChanges++;
+                    $this->line(sprintf('[api   ] %s Buy Box: %s -> <info>%s</info> (after a price update)', $asin, $winners[$asin] ?? '(none)', $winner ?? '(suppressed)'));
+                }
+            }
+
             $result = $runner->tick();
             $events += count($result->events);
             $moves += count($result->moves);
@@ -59,6 +68,8 @@ class SimRunCommand extends Command
                     $result->tick, $at, $c->asin, $c->from ?? '(none)', $c->to ?? '(suppressed)',
                     $c->winningLanded === null ? '-' : number_format($c->winningLanded / 100, 2), $c->reason));
             }
+
+            $winners = $worlds->buyBoxWinners();
 
             if ($sleepUs > 0) {
                 usleep($sleepUs);
