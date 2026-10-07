@@ -64,6 +64,7 @@ ENV PORT=10000 \
     APP_ENV=production \
     APP_DEBUG=false \
     DEMO_MODE=true \
+    ALLOW_REGISTRATION=false \
     LOG_CHANNEL=stderr \
     DB_CONNECTION=pgsql \
     REDIS_HOST=127.0.0.1 \
