@@ -13,7 +13,9 @@ class DemoPrimeCommand extends Command
 
     public function handle(HeadlessLoop $loop): int
     {
-        config(['queue.default' => 'sync']); // decide and push inline: the history exists when this returns
+        // Decide and push inline so the history exists when this returns. Nobody is watching
+        // a prime, so nothing is broadcast (and a stopped Reverb cannot break it).
+        config(['queue.default' => 'sync', 'broadcasting.default' => 'null']);
 
         $ticks = (int) ($this->option('ticks') ?? config('demo.prime_ticks'));
         $stats = $loop->run($ticks);

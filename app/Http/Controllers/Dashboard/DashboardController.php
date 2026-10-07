@@ -35,6 +35,7 @@ class DashboardController extends Controller
                 'reverb' => config('demo.reverb_client'),
                 'our_seller_id' => config('market.seller_id'),
                 'reset_minutes' => config('demo.enabled') ? (int) config('demo.reset_minutes') : null,
+                'featured_sku' => config('demo.featured_sku'),
             ],
         ]);
     }

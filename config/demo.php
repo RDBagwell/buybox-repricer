@@ -20,7 +20,10 @@ return [
     'reset_minutes' => (int) env('DEMO_RESET_MINUTES', 30),
 
     // Ticks run synchronously after a reset so the page opens on a price war already under way.
-    'prime_ticks' => (int) env('DEMO_PRIME_TICKS', 160),
+    'prime_ticks' => (int) env('DEMO_PRIME_TICKS', 48),
+
+    // The product the dashboard opens on: the one in the liveliest price war.
+    'featured_sku' => env('DEMO_FEATURED_SKU', 'FP-1L-STEEL'),
 
     // The simulator only ticks while someone has had the dashboard open recently.
     'idle_after_seconds' => (int) env('DEMO_IDLE_AFTER_SECONDS', 120),

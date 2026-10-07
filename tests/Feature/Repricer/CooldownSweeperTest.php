@@ -92,3 +92,19 @@ it('drops a queued re-check that a newer decision has superseded, instead of rec
     expect(PriceDecision::query()->count())->toBe($before)
         ->and(PriceDecision::query()->where('outcome', 'stale')->count())->toBe(0);
 });
+
+it('still re-checks a cooldown skip that a late, stale notification was recorded after', function () {
+    $p = Market::product();
+    $p->forceFill(['last_price_change_at' => '2026-01-01T00:09:00Z'])->save();
+    setMarketClock('2026-01-01T00:10:00Z');
+    $skip = app(RepricingService::class)->handle($p, Market::notification(time: '2026-01-01T00:10:00Z'));
+    expect($skip->reason_code)->toBe('cooldown');
+
+    // A notification from before the skip arrives late: recorded as stale, after the skip.
+    $stale = app(RepricingService::class)->handle(Market::product(), Market::notification(time: '2026-01-01T00:08:00Z'));
+    expect($stale->outcome)->toBe('stale');
+
+    setMarketClock('2026-01-01T00:20:00Z');
+    Queue::fake();
+    expect(app(CooldownSweeper::class)->sweep())->toBe(1);
+});

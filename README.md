@@ -52,15 +52,15 @@ That run took 81.8 s of wall time (500 ticks × 15 s of market time at 100x ≈ 
 
 ## Layout
 
-| Namespace | What lives there |
-|---|---|
-| `App\Repricer\Rules` | The pure pipeline: `PricingContext`, `Rule`, verdicts, `Pipeline`, the eight rules. No framework, no clock, no I/O (enforced by architecture tests). |
-| `App\Repricer\Market` | The `MarketAdapter` interface and its DTOs: the only way the repricer sees a marketplace. |
-| `App\Repricer\…` | Jobs, the repricing service, pushes, the listener, models, CLI. The impure shell around the rules. |
-| `App\Simulator\Engine` | The deterministic marketplace: seeded RNG, market clock, Buy Box scorer, competitor bots. Pure PHP. |
-| `App\Simulator\…` | Persistence (`sim_` tables only), the Redis-stream notification channel, the `SimulatorMarketAdapter`, the CLI. |
-| `App\Support` | `Money`, `Rounding`, `Fulfillment`, the Redis token bucket. Depends on neither side. |
-| `App\Providers\MarketServiceProvider` | The single place that binds `MarketAdapter` to the simulator. |
+| Namespace                             | What lives there                                                                                                                                     |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `App\Repricer\Rules`                  | The pure pipeline: `PricingContext`, `Rule`, verdicts, `Pipeline`, the eight rules. No framework, no clock, no I/O (enforced by architecture tests). |
+| `App\Repricer\Market`                 | The `MarketAdapter` interface and its DTOs: the only way the repricer sees a marketplace.                                                            |
+| `App\Repricer\…`                      | Jobs, the repricing service, pushes, the listener, models, CLI. The impure shell around the rules.                                                   |
+| `App\Simulator\Engine`                | The deterministic marketplace: seeded RNG, market clock, Buy Box scorer, competitor bots. Pure PHP.                                                  |
+| `App\Simulator\…`                     | Persistence (`sim_` tables only), the Redis-stream notification channel, the `SimulatorMarketAdapter`, the CLI.                                      |
+| `App\Support`                         | `Money`, `Rounding`, `Fulfillment`, the Redis token bucket. Depends on neither side.                                                                 |
+| `App\Providers\MarketServiceProvider` | The single place that binds `MarketAdapter` to the simulator.                                                                                        |
 
 ## The rules pipeline
 
@@ -75,20 +75,20 @@ Each rule takes the context and the price proposed so far, and returns a **propo
 7. **floor_ceiling**: clamp to the product's hard floor and ceiling. **Guardrail.**
 8. **no_op**: veto when the final price equals the current one.
 
-The competitor filter runs *before* the strategy (the brief lists it after). A strategy that has already priced against an ineligible offer cannot be un-chased by a later rule, so filtering has to come first; a test pins this order.
+The competitor filter runs _before_ the strategy (the brief lists it after). A strategy that has already priced against an ineligible offer cannot be un-chased by a later rule, so filtering has to come first; a test pins this order.
 
 **Guardrails always run last among the price-shaping rules, as a tested invariant.** Every rule declares a `Stage`. `Pipeline` refuses to be built if stages are out of order or either guardrail is missing. It throws if a filter or final-stage rule tries to propose a price. As a last line of defence, it vetoes any final price outside `[max(floor, margin floor), ceiling]`.
 
 ### Edge cases (all covered by scenario tests)
 
-| Situation | Behaviour |
-|---|---|
-| No competitors | `no_competition=hold` keeps the price; `raise_to_ceiling` heads for the ceiling (still step-limited). |
-| Every competitor filtered out | Same as no competitors; the trace says they were filtered. |
-| Floor above every competitor | The floor wins; we stay at the floor even if we lose the Buy Box. |
-| Margin floor above the ceiling | Configuration error: vetoed, recorded as `config_error`, never priced. Same for floor > ceiling. |
-| We're the only seller | We hold the Buy Box; the no-competition setting applies. |
-| Tie on landed price | The shared landed price is the reference: `beat_*` undercuts it, `match_lowest` joins the tie, which the marketplace gives to the incumbent. |
+| Situation                           | Behaviour                                                                                                                                                                |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| No competitors                      | `no_competition=hold` keeps the price; `raise_to_ceiling` heads for the ceiling (still step-limited).                                                                    |
+| Every competitor filtered out       | Same as no competitors; the trace says they were filtered.                                                                                                               |
+| Floor above every competitor        | The floor wins; we stay at the floor even if we lose the Buy Box.                                                                                                        |
+| Margin floor above the ceiling      | Configuration error: vetoed, recorded as `config_error`, never priced. Same for floor > ceiling.                                                                         |
+| We're the only seller               | We hold the Buy Box; the no-competition setting applies.                                                                                                                 |
+| Tie on landed price                 | The shared landed price is the reference: `beat_*` undercuts it, `match_lowest` joins the tie, which the marketplace gives to the incumbent.                             |
 | Current price outside floor–ceiling | The guardrails move it into range even if that exceeds the step limit. This is the only way a move may exceed the step limit, and the property tests check exactly that. |
 
 ## Money and rounding
@@ -119,7 +119,7 @@ Bots implement `CompetitorBot` (key + `act(BotContext): BotAction`). Bots get th
 
 ## Determinism
 
-All simulation randomness comes from one seeded `Xoshiro256**` engine whose full state is stored in `sim_state`. Time comes only from the market clock. The same seed and starting world give an identical run, in memory and through the database (both tested). Event ids are UUIDv7s assigned when events are *published*, outside the engine, so re-running a seed never collides with ids the repricer has already processed. Market time never runs backwards across `sim:reset`.
+All simulation randomness comes from one seeded `Xoshiro256**` engine whose full state is stored in `sim_state`. Time comes only from the market clock. The same seed and starting world give an identical run, in memory and through the database (both tested). Event ids are UUIDv7s assigned when events are _published_, outside the engine, so re-running a seed never collides with ids the repricer has already processed. Market time never runs backwards across `sim:reset`.
 
 ## Event delivery: why a Redis stream
 
@@ -155,26 +155,26 @@ A purely push-driven repricer has one gap: an event skipped for **cooldown** is 
 php artisan test        # or vendor/bin/pest
 ```
 
-| Suite | Covers |
-|---|---|
-| `tests/Unit/Rules` | Every rule with hand-built contexts; table-driven pipeline scenarios; the ordering invariant; **property tests** (seeded loops of 5,000 and 2,000 cases: within floor/ceiling/margin floor, step limit unless a clamp forces it, deterministic). |
-| `tests/Unit/Simulator` | Buy Box scoring (each factor, disqualification, incumbent tie-break), bots, determinism. |
-| `tests/Feature/Simulator` | DB-backed runner ≡ in-memory engine, seed reproducibility, the CLI. |
-| `tests/Feature/Repricer` | Decisions, duplicates, crash/retry, stale events, kill switch, dry run, append-only audit, pushes under injected 429/503, rate limiting, the Redis lock with a real queue worker, the listener and redelivery, cooldown re-checks. |
-| `tests/Contract` | One `MarketAdapter` contract suite (`MarketAdapterContract::register`), run against the simulator adapter; a future SP-API client provides an `AdapterHarness` and runs the same suite. |
-| `tests/Simulation` | Headless loop against Penny Pincher: never below the floor or margin floor, reprices bounded by the cooldown, every delivery audited; kill switch and dry run end to end. |
-| `tests/Arch` | Repricer never imports the simulator; rules use no framework, clock, randomness or I/O; simulator only touches `sim_` tables; money columns are integers. |
+| Suite                     | Covers                                                                                                                                                                                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tests/Unit/Rules`        | Every rule with hand-built contexts; table-driven pipeline scenarios; the ordering invariant; **property tests** (seeded loops of 5,000 and 2,000 cases: within floor/ceiling/margin floor, step limit unless a clamp forces it, deterministic). |
+| `tests/Unit/Simulator`    | Buy Box scoring (each factor, disqualification, incumbent tie-break), bots, determinism.                                                                                                                                                         |
+| `tests/Feature/Simulator` | DB-backed runner ≡ in-memory engine, seed reproducibility, the CLI.                                                                                                                                                                              |
+| `tests/Feature/Repricer`  | Decisions, duplicates, crash/retry, stale events, kill switch, dry run, append-only audit, pushes under injected 429/503, rate limiting, the Redis lock with a real queue worker, the listener and redelivery, cooldown re-checks.               |
+| `tests/Contract`          | One `MarketAdapter` contract suite (`MarketAdapterContract::register`), run against the simulator adapter; a future SP-API client provides an `AdapterHarness` and runs the same suite.                                                          |
+| `tests/Simulation`        | Headless loop against Penny Pincher: never below the floor or margin floor, reprices bounded by the cooldown, every delivery audited; kill switch and dry run end to end.                                                                        |
+| `tests/Arch`              | Repricer never imports the simulator; rules use no framework, clock, randomness or I/O; simulator only touches `sim_` tables; money columns are integers.                                                                                        |
 
 The PHP tests need Postgres and Redis (CI provides both as services; locally they use the `buybox_test` database and Redis DBs 14/15).
 
 ## CLI
 
-| Command | Purpose |
-|---|---|
+| Command                                                | Purpose                                                                              |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
 | `sim:run --ticks= --seed= --speed= [--fast] [--moves]` | Run the simulation; prints Buy Box changes (bot-driven and after our price updates). |
-| `sim:reset --seed= [--purge]` | Rebuild the world from `config/simulator.php`. |
-| `repricer:listen` | Consume notifications → `RepriceJob`s; sweep expired cooldowns. |
-| `repricer:trace {product}` | Latest decisions with rule traces and push attempts. |
-| `repricer:switch kill_switch\|dry_run [on\|off]` | Global switches. |
-| `repricer:pause {sku} [--resume]` | Per-product pause. |
-| `repricer:resume-pushes`, `repricer:recheck-cooldowns` | Safety-net sweeps (scheduled every minute). |
+| `sim:reset --seed= [--purge]`                          | Rebuild the world from `config/simulator.php`.                                       |
+| `repricer:listen`                                      | Consume notifications → `RepriceJob`s; sweep expired cooldowns.                      |
+| `repricer:trace {product}`                             | Latest decisions with rule traces and push attempts.                                 |
+| `repricer:switch kill_switch\|dry_run [on\|off]`       | Global switches.                                                                     |
+| `repricer:pause {sku} [--resume]`                      | Per-product pause.                                                                   |
+| `repricer:resume-pushes`, `repricer:recheck-cooldowns` | Safety-net sweeps (scheduled every minute).                                          |

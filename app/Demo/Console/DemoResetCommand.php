@@ -56,10 +56,15 @@ class DemoResetCommand extends Command
                     DB::table($table)->truncate();
                 }
             }
-            $this->callSilent('db:seed', ['--class' => MarketplaceSeeder::class, '--force' => true]);
+            // Catalogue first, so the marketplace's opening snapshots find our products.
             $this->callSilent('db:seed', ['--class' => CatalogSeeder::class, '--force' => true]);
+            $this->callSilent('db:seed', ['--class' => MarketplaceSeeder::class, '--force' => true]);
             $this->call('demo:prime');
-            WorldReset::dispatch();
+            try {
+                WorldReset::dispatch(); // open dashboards reload
+            } catch (\Throwable $e) {
+                report($e); // Reverb down: dashboards will catch up on reconnect
+            }
             $this->info('Demo world reset.');
         } finally {
             $lock->release();

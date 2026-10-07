@@ -32,7 +32,9 @@ final class CooldownSweeper
     /** @return int number of re-checks queued */
     public function sweep(): int
     {
-        $latestIds = PriceDecision::query()->selectRaw('max(id)')->groupBy('product_id');
+        // Stale decisions are ignored: they record a late notification, carry no newer market
+        // information, and must not hide the cooldown skip that still needs a re-check.
+        $latestIds = PriceDecision::query()->selectRaw('max(id)')->where('outcome', '!=', DecisionStatus::Stale->value)->groupBy('product_id');
         $candidates = PriceDecision::query()
             ->whereIn('id', $latestIds)
             ->where('reason_code', 'cooldown')
@@ -78,7 +80,7 @@ final class CooldownSweeper
             return true;
         }
 
-        $latest = PriceDecision::query()->where('product_id', $product->id)->latest('id')->value('event_id');
+        $latest = PriceDecision::query()->where('product_id', $product->id)->where('outcome', '!=', DecisionStatus::Stale->value)->latest('id')->value('event_id');
 
         return $latest === substr($recheck->notificationId, 0, -strlen(self::SUFFIX));
     }
