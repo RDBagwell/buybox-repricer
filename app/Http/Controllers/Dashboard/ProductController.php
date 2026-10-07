@@ -48,7 +48,7 @@ class ProductController extends Controller
         $data = $request->validated();
         /** @var list<string> $competitors */
         $competitors = array_values($data['competitors']);
-        $asin = $this->simulator->nextAsin(Product::query()->pluck('asin')->map(fn ($a) => (string) $a)->all());
+        $asin = $this->simulator->nextAsin(array_values(Product::query()->pluck('asin')->map(fn ($a) => (string) $a)->all()));
         $ruleFields = ['strategy', 'offset', 'floor', 'ceiling', 'min_margin', 'max_step_pct', 'cooldown_sec', 'min_competitor_rating', 'max_competitor_handling_days', 'no_competition'];
 
         $product = DB::transaction(function () use ($request, $data, $asin, $ruleFields, $competitors) {
