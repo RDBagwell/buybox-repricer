@@ -79,7 +79,7 @@ jobs:
         run: vendor/bin/pest --ci
 
   assets:
-    name: Frontend build + types
+    name: Frontend lint, Vitest, build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -108,3 +108,15 @@ jobs:
           cp .env.example .env
           php artisan key:generate
           npm run build
+
+      - name: Lint + format (vp check)
+        run: npx vp check
+
+      - name: Types
+        run: npm run types:check
+
+      - name: Vitest
+        run: npm test
+
+      - name: Replay build (GitHub Pages bundle)
+        run: npm run build:replay
