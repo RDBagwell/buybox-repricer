@@ -60,7 +60,7 @@ it('persists and reloads the world without changing the run (DB-backed == in-mem
     for ($i = 0; $i < 150; $i++) {
         $runner->tick();
     }
-    $dbEvents = DB::table('sim_events')->orderBy('id')->pluck('payload')->map(function ($p) {
+    $dbEvents = DB::table('sim_events')->where('tick', '>', 0)->orderBy('id')->pluck('payload')->map(function ($p) {
         $payload = json_decode((string) $p, true);
         unset($payload['notification_id']);
 
@@ -107,4 +107,12 @@ it('runs headless from the CLI and prints Buy Box changes', function () {
 
 it('rejects a speed outside 1x–100x', function () {
     $this->artisan('sim:run', ['--ticks' => 1, '--speed' => 500])->assertFailed();
+});
+
+it('publishes one reset snapshot per listing so subscribers start from current state', function () {
+    $this->artisan('sim:reset', ['--seed' => 42, '--purge' => true])->assertSuccessful();
+    $messages = app(RedisStreamNotifications::class)->read('t', 100, 0);
+
+    expect($messages)->toHaveCount(count(config('simulator.scenario')))
+        ->and(array_unique(array_map(fn ($m) => $m['payload']['payload']['change_trigger']['change_type'], $messages)))->toBe(['reset']);
 });

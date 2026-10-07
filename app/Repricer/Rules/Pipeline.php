@@ -105,7 +105,7 @@ final readonly class Pipeline
             outcome: DecisionOutcome::Reprice,
             oldPrice: $context->currentPrice,
             newPrice: $final,
-            reason: "Reprice {$context->currentPrice} → {$final}.",
+            reason: "Reprice {$context->currentPrice} -> {$final}.",
             vetoCode: null,
             trace: $trace,
         );

@@ -67,8 +67,8 @@ return [
         [
             'asin' => 'B0SIM00001', 'title' => 'Stainless French Press, 1 L',
             'offers' => [
-                ['seller' => 'our_store', 'sku' => 'FP-1L-STEEL', 'price' => 2899, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 98, 'handling_days' => 1],
-                ['seller' => 'PENNYWISE', 'price' => 2799, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 94, 'handling_days' => 2, 'bot' => 'penny_pincher', 'params' => ['floor' => 2299, 'every' => 4]],
+                ['seller' => 'our_store', 'sku' => 'FP-1L-STEEL', 'price' => 2899, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 98, 'handling_days' => 1],
+                ['seller' => 'PENNYWISE', 'price' => 2799, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 94, 'handling_days' => 2, 'bot' => 'penny_pincher', 'params' => ['floor' => 2299, 'every' => 2]],
                 ['seller' => 'STEADY-CO', 'price' => 3099, 'shipping' => 0, 'fulfillment' => 'marketplace', 'rating' => 97, 'handling_days' => 1, 'bot' => 'anchor', 'params' => ['price' => 3099]],
             ],
         ],

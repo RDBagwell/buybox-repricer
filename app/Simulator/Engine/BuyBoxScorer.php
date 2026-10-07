@@ -11,7 +11,7 @@ use App\Support\Rounding;
  * documented and simple on purpose:
  *
  *   - offers rated below min_rating are disqualified;
- *   - effective price = landed − marketplace-fulfilment bonus + handling-time penalty
+ *   - effective price = landed - marketplace-fulfilment bonus + handling-time penalty
  *     (both percentages of landed, rounded half-up to the cent), so landed price dominates;
  *   - lowest effective price wins;
  *   - ties go to the incumbent (avoids flapping); otherwise lowest landed, then seller id.
@@ -52,7 +52,7 @@ final readonly class BuyBoxScorer
         if ($offer->fulfillment === Fulfillment::Marketplace) {
             $bonus = $landed->percentage($this->marketplaceBonusBps, Rounding::HalfUp);
             $effective = $effective->minus($bonus);
-            $notes[] = "marketplace bonus −{$bonus}";
+            $notes[] = "marketplace bonus -{$bonus}";
         }
 
         $extraDays = max(0, $offer->handlingDays - $this->freeHandlingDays);

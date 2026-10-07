@@ -53,7 +53,7 @@ final class StrategyRule implements Rule
             default => "beat by {$config->offset}",
         };
 
-        return Verdict::propose($target, "{$config->strategy->value}: {$verb} {$label} {$reference->describe()}{$tieNote} → price {$target}.");
+        return Verdict::propose($target, "{$config->strategy->value}: {$verb} {$label} {$reference->describe()}{$tieNote} -> price {$target}.");
     }
 
     /**

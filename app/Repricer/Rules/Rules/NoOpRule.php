@@ -30,6 +30,6 @@ final class NoOpRule implements Rule
             return Verdict::veto(VetoCode::NoChange, "Final price {$state->proposed} equals current price; nothing to push.");
         }
 
-        return Verdict::pass("Price changes {$context->currentPrice} → {$state->proposed}.");
+        return Verdict::pass("Price changes {$context->currentPrice} -> {$state->proposed}.");
     }
 }
