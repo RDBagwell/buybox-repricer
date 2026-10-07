@@ -110,6 +110,11 @@ schedule. The shared world won:
 6. **Keep secrets out of git.** Only `.env.example` is committed. Every secret lives in
    Render's environment.
 
+## Presenting the demo
+
+For a meeting, set `DEMO_RESET_MINUTES=0` so the world isn't rebuilt mid-demo, and set it back
+afterwards. [demo-script.md](demo-script.md) has the full checklist and a five-minute script.
+
 ## Smoke test
 
 CI builds exactly the image Render builds, boots it against a Postgres service and runs
