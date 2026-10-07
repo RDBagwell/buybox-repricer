@@ -51,6 +51,16 @@ export interface DashboardActions {
         productId: number,
         payload: object,
     ): Promise<ActionResult<{ product: Product }>>;
+    createProduct(
+        payload: object,
+    ): Promise<
+        ActionResult<{ product: Product; simulator: SimulatorState | null }>
+    >;
+    archive(
+        productId: number,
+    ): Promise<
+        ActionResult<{ product: Product; simulator: SimulatorState | null }>
+    >;
     simulator: {
         get: () => Promise<ActionResult<{ simulator: SimulatorState | null }>>;
         speed(

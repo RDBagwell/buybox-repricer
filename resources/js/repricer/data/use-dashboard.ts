@@ -173,9 +173,14 @@ export function reducer(state: DashboardModel, action: Action): DashboardModel {
                 ...state,
                 data: {
                     ...data,
-                    products: data.products.map((p) =>
-                        p.id === action.product.id ? action.product : p,
-                    ),
+                    // A product we have not seen yet was just added: append it.
+                    products: data.products.some(
+                        (p) => p.id === action.product.id,
+                    )
+                        ? data.products.map((p) =>
+                              p.id === action.product.id ? action.product : p,
+                          )
+                        : [...data.products, action.product],
                 },
             };
         case 'settings':

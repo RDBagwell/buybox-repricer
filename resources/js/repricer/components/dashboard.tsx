@@ -3,6 +3,7 @@ import {
     CircleSlash,
     FlaskConical,
     PlayCircle,
+    Plus,
     Radio,
     WifiOff,
 } from 'lucide-react';
@@ -20,6 +21,7 @@ import type {
     DashboardState,
     Product,
 } from '../types';
+import { AddProductDialog } from './add-product-dialog';
 import { AuditList } from './audit-list';
 import { DecisionFeed } from './decision-feed';
 import { KillSwitch } from './kill-switch';
@@ -159,12 +161,16 @@ function busiestProduct(
     state: DashboardState,
     featuredSku?: string | null,
 ): number | null {
-    const featured = state.products.find((p) => p.sku === featuredSku);
+    const active = state.products.filter((p) => !p.archived);
+    const featured = active.find((p) => p.sku === featuredSku);
     if (featured) {
         return featured.id;
     }
     const counts = new Map<number, number>();
-    for (const d of state.decisions.slice(0, 40)) {
+    const activeIds = new Set(active.map((p) => p.id));
+    for (const d of state.decisions
+        .slice(0, 40)
+        .filter((d) => activeIds.has(d.product_id))) {
         counts.set(
             d.product_id,
             (counts.get(d.product_id) ?? 0) + (d.outcome === 'reprice' ? 3 : 1),
@@ -172,7 +178,7 @@ function busiestProduct(
     }
     const best = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
 
-    return best?.[0] ?? state.products[0]?.id ?? null;
+    return best?.[0] ?? active[0]?.id ?? null;
 }
 
 export function Dashboard({
@@ -190,12 +196,18 @@ export function Dashboard({
         initial ? busiestProduct(initial, config.featured_sku) : null,
     );
     const [editing, setEditing] = useState<Product | null>(null);
+    const [adding, setAdding] = useState(false);
     const [feedFilter, setFeedFilter] = useState<'all' | 'selected'>('all');
     const actions = source.actions;
     const readOnly = actions === null;
 
     useEffect(() => {
-        if (selected === null && data) {
+        // Nothing selected yet, or the selected product was just archived.
+        if (
+            data &&
+            (selected === null ||
+                data.products.find((p) => p.id === selected)?.archived)
+        ) {
             setSelected(busiestProduct(data, config.featured_sku));
         }
     }, [data, selected, config.featured_sku]);
@@ -240,6 +252,11 @@ export function Dashboard({
             return r;
         },
         [],
+    );
+
+    const activeProducts = useMemo(
+        () => (data?.products ?? []).filter((p) => !p.archived),
+        [data],
     );
 
     const selectedProduct = useMemo(
@@ -454,7 +471,7 @@ export function Dashboard({
                                 aria-label="Products"
                                 className="-mx-1 mb-2 flex gap-1 overflow-x-auto px-1 pb-1"
                             >
-                                {data.products.map((p) => (
+                                {activeProducts.map((p) => (
                                     <button
                                         key={p.id}
                                         role="tab"
@@ -487,9 +504,24 @@ export function Dashboard({
                             />
                         </Section>
 
-                        <Section title="Products">
+                        <Section
+                            title="Products"
+                            aside={
+                                readOnly ? undefined : (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="h-8"
+                                        onClick={() => setAdding(true)}
+                                    >
+                                        <Plus className="size-3.5" /> Add
+                                        product
+                                    </Button>
+                                )
+                            }
+                        >
                             <ProductTable
-                                products={data.products}
+                                products={activeProducts}
                                 selectedId={selected}
                                 readOnly={readOnly}
                                 onSelect={setSelected}
@@ -512,6 +544,18 @@ export function Dashboard({
                                     }
                                 }}
                                 onEditRule={setEditing}
+                                onArchive={async (p) => {
+                                    if (actions) {
+                                        await run(
+                                            () => actions.archive(p.id),
+                                            (d) => {
+                                                setProduct(d.product);
+                                                setSimulator(d.simulator);
+                                            },
+                                            `${p.title} archived`,
+                                        );
+                                    }
+                                }}
                             />
                         </Section>
                     </div>
@@ -595,6 +639,30 @@ export function Dashboard({
                     cents end to end.
                 </footer>
             </main>
+
+            <AddProductDialog
+                open={adding}
+                botTypes={data.simulator?.bot_types ?? []}
+                onClose={() => setAdding(false)}
+                onCreate={async (payload) => {
+                    if (!actions) {
+                        return { ok: false, message: 'Read-only replay.' };
+                    }
+                    const r = await actions.createProduct(payload);
+                    if (r.ok) {
+                        setProduct(r.data.product);
+                        setSimulator(r.data.simulator);
+                        setSelected(r.data.product.id);
+                        toast.success(
+                            `${r.data.product.title} added: the repricer is on it`,
+                        );
+
+                        return { ok: true };
+                    }
+
+                    return { ok: false, errors: r.errors, message: r.message };
+                }}
+            />
 
             <RuleEditor
                 product={editing}

@@ -64,7 +64,8 @@ than a public issue.
 - Demo caps, enforced on the server:
     - speed is at most 50x;
     - injected faults are at most 30% each;
-    - at most 6 offers per listing.
+    - at most 6 offers per listing;
+    - at most 8 active products (`DEMO_MAX_PRODUCTS`).
 - The whole demo world is rebuilt from its seed every 30 minutes and on every boot
   (`demo:reset`), so nothing a visitor does persists.
 - Behind a proxy, client IPs come from `X-Forwarded-For` only when `TRUSTED_PROXIES` is set.

@@ -289,6 +289,12 @@ Laravel Reverb for live updates.
     - Price, Buy Box holder, 24h win rate in market time, and margin.
     - Reprices this hour against the breaker limit.
     - Pause and resume, where resuming needs an acknowledgement.
+    - **Add product**: a form (title, SKU, cost, fees, shipping, starting price, the pricing
+      rule and up to two competitor bots) that opens a new simulated listing; the repricer
+      starts on it at once. Validated like the rule editor, on the client and the server.
+    - **Archive**: products are archived, never deleted, because their decisions and audit
+      trail are append-only. An archived product stops repricing and leaves the simulation;
+      its history stays.
     - The rule editor: server validation in a FormRequest, mirrored on the client, and every
       change audited with before and after values.
 - **Always-visible kill switch** with a confirmation, plus a dry-run toggle with a banner.

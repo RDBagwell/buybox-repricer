@@ -6,6 +6,8 @@ const ACTION_LABELS: Record<string, string> = {
     'breaker.tripped': 'Circuit breaker tripped',
     'product.paused': 'Product paused',
     'product.resumed': 'Product resumed',
+    'product.created': 'Product added',
+    'product.archived': 'Product archived',
     'rule.updated': 'Rules changed',
     'kill_switch.on': 'Kill switch on',
     'kill_switch.off': 'Kill switch off',
