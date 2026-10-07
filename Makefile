@@ -9,12 +9,24 @@ up: env
 	@echo ""
 	@echo "Stack is up. Try:  make sim   (then)  make trace SKU=FP-1L-STEEL"
 
-## Ensure .env exists and has an APP_KEY (an existing .env with a blank key is fixed, a set key is kept).
+## Ensure .env exists, has every variable .env.example defines (an older .env gains the new ones,
+## existing values are kept), and has an APP_KEY and a Reverb secret of its own.
 env:
 	@test -f .env || cp .env.example .env
+	@[ -z "$$(tail -c1 .env)" ] || echo >> .env
+	@for key in $$(sed -n 's/^\([A-Z][A-Z0-9_]*\)=.*/\1/p' .env.example); do \
+		if ! grep -q "^$$key=" .env; then \
+			grep "^$$key=" .env.example >> .env; \
+			echo "Added $$key to .env (from .env.example)"; \
+		fi; \
+	done
 	@if ! grep -q '^APP_KEY=base64:' .env; then \
 		sed -i.bak "s|^APP_KEY=.*|APP_KEY=base64:$$(openssl rand -base64 32)|" .env && rm -f .env.bak; \
 		echo "Generated APP_KEY in .env"; \
+	fi
+	@if grep -q '^REVERB_APP_SECRET=change-me$$' .env; then \
+		sed -i.bak "s|^REVERB_APP_SECRET=.*|REVERB_APP_SECRET=$$(openssl rand -hex 20)|" .env && rm -f .env.bak; \
+		echo "Generated REVERB_APP_SECRET in .env"; \
 	fi
 
 down:

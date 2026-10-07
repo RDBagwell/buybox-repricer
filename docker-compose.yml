@@ -23,6 +23,11 @@ x-app: &app
         CACHE_STORE: redis
         SESSION_DRIVER: redis
         BROADCAST_CONNECTION: reverb
+        # Defaults for an .env written before these existed (make up also adds them to .env).
+        REVERB_APP_ID: ${REVERB_APP_ID:-buybox}
+        REVERB_APP_KEY: ${REVERB_APP_KEY:-buybox-key}
+        REVERB_APP_SECRET: ${REVERB_APP_SECRET:-local-dev-secret}
+        DEMO_MODE: ${DEMO_MODE:-true}
         REVERB_HOST: reverb
         REVERB_PORT: 8090
         REVERB_SCHEME: http
