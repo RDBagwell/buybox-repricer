@@ -227,6 +227,16 @@ rotation between near-equal offers. Nothing here should be read as how Amazon de
 approximation exists so the repricer has something consistent to fight over, and so tests can
 pin behaviour such as "a tie keeps the incumbent".
 
+## Other marketplaces (TikTok Shop, Facebook)
+
+Not every marketplace has a Buy Box. The simulator also models an **open-listing** marketplace,
+where every seller lists separately and what matters is our price rank among comparable
+listings. The LED Ring Light sells there: its row shows an **Open listings** badge and our rank
+("Cheapest of 3") instead of a Buy Box holder, and "beat the Buy Box holder" is refused for it.
+The rules, guardrails and audit trail are the same. New products can be added on either kind.
+[docs/marketplaces.md](docs/marketplaces.md) covers what would change for TikTok Shop and
+Facebook, with sources.
+
 ## The rules pipeline
 
 Each rule takes the context and the price proposed so far. It returns one of three verdicts:
