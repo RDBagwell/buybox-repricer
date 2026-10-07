@@ -3,10 +3,14 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { formatCents } from '../lib/money';
 import { formatMarketTime } from '../lib/time';
-import { describeTrace, OUTCOME_LABELS, ruleLabel } from '../lib/trace';
+import type { Badge } from '../lib/trace';
+import { BADGE_LABELS, badgeFor, describeTrace, ruleLabel } from '../lib/trace';
 import type { Decision, Product } from '../types';
 
-const OUTCOME_STYLES: Record<Decision['outcome'], string> = {
+const OUTCOME_STYLES: Record<Badge, string> = {
+    blocked:
+        'bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-100',
+    push_failed: 'bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-100',
     reprice: 'bg-sky-100 text-sky-900 dark:bg-sky-900/40 dark:text-sky-100',
     dry_run:
         'bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-100',
@@ -24,7 +28,7 @@ const TONE_STYLES = {
     stop: 'text-red-700 dark:text-red-400',
 };
 
-export function OutcomeBadge({ outcome }: { outcome: Decision['outcome'] }) {
+export function OutcomeBadge({ outcome }: { outcome: Badge }) {
     return (
         <span
             className={cn(
@@ -32,7 +36,7 @@ export function OutcomeBadge({ outcome }: { outcome: Decision['outcome'] }) {
                 OUTCOME_STYLES[outcome],
             )}
         >
-            {OUTCOME_LABELS[outcome]}
+            {BADGE_LABELS[outcome]}
         </span>
     );
 }
@@ -61,7 +65,7 @@ function DecisionRow({
             >
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <OutcomeBadge outcome={decision.outcome} />
+                        <OutcomeBadge outcome={badgeFor(decision)} />
                         <span className="truncate font-medium text-foreground">
                             {product?.title ?? `Product ${decision.product_id}`}
                         </span>

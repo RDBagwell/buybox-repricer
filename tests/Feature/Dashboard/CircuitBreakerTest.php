@@ -43,7 +43,7 @@ it('trips after N reprices in a market hour: pauses, explains, audits and blocks
 
     expect($blocked?->status)->toBe('blocked')
         ->and(Market::product()->paused)->toBeTrue()
-        ->and(Market::product()->paused_reason)->toContain('Circuit breaker: 3 reprices in the last market hour (limit 3)');
+        ->and(Market::product()->paused_reason)->toContain('Circuit breaker: reprice #4 within one market hour blocked (limit 3)');
 
     $audit = AuditEntry::query()->where('action', 'breaker.tripped')->sole();
     expect($audit->actor)->toBe('system')

@@ -41,7 +41,8 @@ final class RepriceRateBreaker implements CircuitBreaker
             return null;
         }
 
-        $reason = "Circuit breaker: {$recent} reprices in the last market hour (limit {$this->maxPerHour}). Review the rules and resume manually.";
+        $attempt = $recent + 1;
+        $reason = "Circuit breaker: reprice #{$attempt} within one market hour blocked (limit {$this->maxPerHour}). Review the rules and resume manually.";
 
         DB::transaction(function () use ($product, $reason, $now, $recent) {
             $product->forceFill(['paused' => true, 'paused_reason' => $reason, 'paused_at' => $now])->save();

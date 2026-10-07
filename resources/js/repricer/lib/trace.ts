@@ -247,3 +247,29 @@ export const OUTCOME_LABELS: Record<Decision['outcome'], string> = {
     config_error: 'Vetoed',
     stale: 'Stale',
 };
+
+/** What the feed's badge shows: the decision, unless its push never landed. */
+export type Badge = Decision['outcome'] | 'blocked' | 'push_failed';
+
+export const BADGE_LABELS: Record<Badge, string> = {
+    ...OUTCOME_LABELS,
+    blocked: 'Blocked',
+    push_failed: 'Push failed',
+};
+
+/**
+ * A "reprice" decision whose push the circuit breaker blocked (or that failed after its
+ * retries) did not change the price, so the badge must not say "Repriced".
+ */
+export function badgeFor(d: Pick<Decision, 'outcome' | 'push'>): Badge {
+    if (d.outcome === 'reprice' && d.push) {
+        if (d.push.status === 'blocked') {
+            return 'blocked';
+        }
+        if (d.push.status === 'failed') {
+            return 'push_failed';
+        }
+    }
+
+    return d.outcome;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeTrace } from '../lib/trace';
+import { badgeFor, describeTrace } from '../lib/trace';
 import type { Decision, TraceEntry } from '../types';
 
 function t(
@@ -196,5 +196,22 @@ describe('describeTrace', () => {
 
     it('keeps every rule verdict for the expanded view', () => {
         expect(describeTrace(decision(repriced)).detail).toHaveLength(8);
+    });
+});
+
+describe('badgeFor', () => {
+    it('never calls a blocked or failed push "Repriced"', () => {
+        const push = (status: string) => ({ status, attempts: 1 });
+        expect(badgeFor({ outcome: 'reprice', push: push('succeeded') })).toBe(
+            'reprice',
+        );
+        expect(badgeFor({ outcome: 'reprice', push: push('blocked') })).toBe(
+            'blocked',
+        );
+        expect(badgeFor({ outcome: 'reprice', push: push('failed') })).toBe(
+            'push_failed',
+        );
+        expect(badgeFor({ outcome: 'reprice', push: null })).toBe('reprice');
+        expect(badgeFor({ outcome: 'skipped', push: null })).toBe('skipped');
     });
 });
