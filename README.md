@@ -14,8 +14,7 @@ bots, so you can watch it work without a seller account.
 
 - **Live demo:** https://buybox-repricer-demo.onrender.com/ (hosting notes: [docs/hosting.md](docs/hosting.md)).
   It sleeps when nobody is watching, so the first load takes about a minute.
-- **Instant replay (no server):** _TODO(Robert): https://rdbagwell.github.io/buybox-repricer/ once Pages is enabled._
-  This is a real recorded run, played back in your browser.
+- **Instant replay (no server):** https://rdbagwell.github.io/buybox-repricer/ 
 
 ![The dashboard a few seconds after load: the French Press price war, live decisions streaming in](docs/screenshots/demo.gif)
 
@@ -43,9 +42,16 @@ _Recorded with Playwright from a real local run (`tests/e2e/capture.spec.ts`), n
 
 ## Backstory: from MWS to SP-API
 
-_TODO(Robert): replace this paragraph with your own story. The facts below are scaffolding.
-Fill in when you built repricers against MWS, for which sellers and catalogue sizes, what broke
-when MWS was retired, and what you'd tell your past self._
+Early in my career, my boss at the time asked me to build an Amazon repricer for his store. It used
+Amazon's MWS API to find which competitor held the Buy Box on products we also sold, compared their
+price to ours, and adjusted our price to be competitive enough to win the Buy Box back. Every product
+had a floor and a ceiling, so no matter what competitors did, the repricer would never price us
+below what we could afford or above what made sense.
+
+That code belonged to the company, and MWS has since been retired in favor of the Selling Partner
+API. This project is a clean-room rebuild of the same idea, 12 years later: event-driven instead of
+polling, with the pricing rules isolated and tested, and a simulated marketplace so anyone can run it
+without a seller account.
 
 Amazon's original seller API, MWS, was retired in favour of the Selling Partner API (SP-API).
 SP-API moved authorisation to Login with Amazon (LWA) tokens, split pricing reads (the Product
