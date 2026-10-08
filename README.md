@@ -14,7 +14,7 @@ bots, so you can watch it work without a seller account.
 
 - **Live demo:** https://buybox-repricer-demo.onrender.com/ (hosting notes: [docs/hosting.md](docs/hosting.md)).
   It sleeps when nobody is watching, so the first load takes about a minute.
-- **Instant replay (no server):** https://rdbagwell.github.io/buybox-repricer/ 
+- **Instant replay (no server):** https://rdbagwell.github.io/buybox-repricer/
 
 ![The dashboard a few seconds after load: the French Press price war, live decisions streaming in](docs/screenshots/demo.gif)
 
