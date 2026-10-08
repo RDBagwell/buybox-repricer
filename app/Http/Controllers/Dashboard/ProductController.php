@@ -10,6 +10,7 @@ use App\Repricer\Catalog\Channel;
 use App\Repricer\Dashboard\DashboardQuery;
 use App\Repricer\Events\ProductUpdated;
 use App\Repricer\Market\MarketAdapter;
+use App\Repricer\Models\AuditEntry;
 use App\Repricer\Models\Product;
 use App\Repricer\Pricing\RulePreview;
 use App\Repricer\Safety\AuditLog;
@@ -17,7 +18,6 @@ use App\Simulator\Engine\Listing;
 use App\Simulator\Engine\SimOffer;
 use App\Simulator\SimulatorControl;
 use App\Support\Fulfillment;
-use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +25,9 @@ use InvalidArgumentException;
 
 class ProductController extends Controller
 {
+    /** @var list<string> */
+    private const DEFAULT_RESTORE_COMPETITORS = ['penny_pincher', 'anchor'];
+
     public function __construct(
         private readonly AuditLog $audit,
         private readonly DashboardQuery $query,
@@ -74,15 +77,7 @@ class ProductController extends Controller
         });
 
         try {
-            $this->simulator->addListing($asin, $product->title, new SimOffer(
-                (string) config('market.seller_id'),
-                Money::cents((int) $data['price']),
-                Money::cents((int) $data['shipping']),
-                Fulfillment::Marketplace,
-                98,
-                1,
-                $product->sku,
-            ), $competitors, $product->channel->hasBuyBox() ? Listing::BUYBOX : Listing::OPEN);
+            $this->simulator->addListing($asin, $product->title, $this->ourOffer($product), $competitors, $this->listingModel($product));
         } catch (InvalidArgumentException $e) {
             // Nothing has been decided for it yet: take the catalogue entry back out.
             DB::transaction(function () use ($product) {
@@ -111,7 +106,9 @@ class ProductController extends Controller
 
         if (! $product->isArchived()) {
             $now = $this->market->now();
-            DB::transaction(function () use ($request, $product, $now) {
+            // Remembered on the audit row, so a restore brings the same competitors back.
+            $competitors = $this->simulator->listingBots($product->asin);
+            DB::transaction(function () use ($request, $product, $now, $competitors) {
                 $before = ['archived' => false, 'paused' => $product->paused];
                 $product->forceFill([
                     'archived_at' => $now,
@@ -119,11 +116,62 @@ class ProductController extends Controller
                     'paused_reason' => 'Archived by an operator.',
                     'paused_at' => $product->paused_at ?? $now,
                 ])->save();
-                $this->audit->record('product.archived', Actor::of($request), $product->id, $before, ['archived' => true, 'paused' => true]);
+                $this->audit->record('product.archived', Actor::of($request), $product->id, $before, ['archived' => true, 'paused' => true, 'competitors' => $competitors]);
             });
             $this->simulator->removeListing($product->asin);
             ProductUpdated::dispatch($product->id);
         }
+
+        return response()->json([
+            'product' => $this->query->product($product->id),
+            'simulator' => $this->panel->state(),
+        ]);
+    }
+
+    /**
+     * Bring an archived product back. It rejoins the marketplace simulation at its last price with
+     * the competitors it had when it was archived (kept on the archive's audit row), and
+     * repricing resumes. Restoring is as deliberate as archiving: the request must confirm it.
+     */
+    public function restore(Request $request, Product $product): JsonResponse
+    {
+        $request->validate(['confirm' => ['accepted']]);
+
+        if (! $product->isArchived()) {
+            // Already active: nothing to do (like archiving an archived product).
+            return response()->json(['product' => $this->query->product($product->id), 'simulator' => $this->panel->state()]);
+        }
+        $max = (int) config('demo.max_products');
+        if (config('demo.enabled') && Product::query()->active()->count() >= $max) {
+            return response()->json(['message' => "The public demo holds at most {$max} products. Archive one first."], 422);
+        }
+
+        $competitors = $this->archivedCompetitors($product);
+        try {
+            $this->simulator->addListing($product->asin, $product->title, $this->ourOffer($product), $competitors, $this->listingModel($product));
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($request, $product, $competitors) {
+                $product->forceFill([
+                    'archived_at' => null,
+                    'paused' => false,
+                    'paused_reason' => null,
+                    'paused_at' => null,
+                ])->save();
+                $this->audit->record('product.restored', Actor::of($request), $product->id,
+                    ['archived' => true, 'paused' => true],
+                    ['archived' => false, 'paused' => false, 'competitors' => $competitors]);
+            });
+        } catch (\Throwable $e) {
+            $this->simulator->removeListing($product->asin); // still archived: take it back off the market
+
+            throw $e;
+        }
+
+        ProductUpdated::dispatch($product->id);
 
         return response()->json([
             'product' => $this->query->product($product->id),
@@ -202,5 +250,52 @@ class ProductController extends Controller
         ProductUpdated::dispatch($product->id);
 
         return response()->json(['product' => $this->query->product($product->id)]);
+    }
+
+    /** Our offer on the simulated marketplace, at the product's current price. */
+    private function ourOffer(Product $product): SimOffer
+    {
+        return new SimOffer(
+            (string) config('market.seller_id'),
+            $product->current_price,
+            $product->shipping,
+            Fulfillment::Marketplace,
+            98,
+            1,
+            $product->sku,
+        );
+    }
+
+    private function listingModel(Product $product): string
+    {
+        return $product->channel->hasBuyBox() ? Listing::BUYBOX : Listing::OPEN;
+    }
+
+    /**
+     * The competitors recorded when the product was last archived. Products archived before
+     * competitors were recorded come back against a penny-pincher and an anchor.
+     *
+     * @return list<string>
+     */
+    private function archivedCompetitors(Product $product): array
+    {
+        $entry = AuditEntry::query()
+            ->where('product_id', $product->id)
+            ->where('action', 'product.archived')
+            ->latest('id')
+            ->first();
+        $recorded = $entry?->after['competitors'] ?? null;
+        if (! is_array($recorded)) {
+            return self::DEFAULT_RESTORE_COMPETITORS;
+        }
+
+        $competitors = [];
+        foreach ($recorded as $type) {
+            if (is_string($type)) {
+                $competitors[] = $type;
+            }
+        }
+
+        return $competitors;
     }
 }

@@ -76,6 +76,12 @@ to open listings. Click **Add product**.
 **Say:** "Products can be added and archived here. A new one starts repricing straight away."
 Point at it appearing in the feed, then archive it.
 
+**Then:** open **Archived** under the table and click **Restore**. "Archived, never deleted:
+it comes back with its history and the same competitors."
+
+**Note:** the simulation must be running (the Simulator panel shows **Pause simulation**). If
+it shows **Run simulation**, click it first, or new products wait for a first price change.
+
 ## Likely questions
 
 The questions and answers on other marketplaces are in [marketplaces.md](marketplaces.md).

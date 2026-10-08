@@ -14,6 +14,7 @@ dataset('mutations', [
     'dry run' => ['post', '/api/switches/dry-run', ['on' => true]],
     'add product' => ['post', '/api/products', ['title' => 'Ceramic Mug, 12 oz', 'sku' => 'MUG-AUTH-1', 'cost' => 400, 'fees' => 150, 'shipping' => 0, 'price' => 1499, 'competitors' => ['anchor'], 'strategy' => 'beat_buybox', 'offset' => 10, 'floor' => 899, 'ceiling' => 1999, 'min_margin' => 200, 'max_step_pct' => 5, 'cooldown_sec' => 120]],
     'archive product' => ['post', '/api/products/{id}/archive', ['confirm' => true]],
+    'restore product' => ['post', '/api/products/{id}/restore', ['confirm' => true]],
     'pause' => ['post', '/api/products/{id}/pause', []],
     'resume' => ['post', '/api/products/{id}/resume', ['acknowledge' => true]],
     'rule' => ['put', '/api/products/{id}/rule', ['strategy' => 'beat_buybox', 'offset' => 10, 'floor' => 2699, 'ceiling' => 3499, 'min_margin' => 300, 'max_step_pct' => 5, 'cooldown_sec' => 120]],

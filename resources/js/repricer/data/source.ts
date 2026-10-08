@@ -66,6 +66,11 @@ export interface DashboardActions {
     ): Promise<
         ActionResult<{ product: Product; simulator: SimulatorState | null }>
     >;
+    restore(
+        productId: number,
+    ): Promise<
+        ActionResult<{ product: Product; simulator: SimulatorState | null }>
+    >;
     simulator: {
         get: () => Promise<ActionResult<{ simulator: SimulatorState | null }>>;
         speed(

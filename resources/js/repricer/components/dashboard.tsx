@@ -24,6 +24,7 @@ import type {
     Product,
 } from '../types';
 import { AddProductDialog } from './add-product-dialog';
+import { ArchivedProducts } from './archived-products';
 import { AuditList } from './audit-list';
 import { DecisionFeed } from './decision-feed';
 import { KillSwitch } from './kill-switch';
@@ -296,6 +297,10 @@ export function Dashboard({
 
     const activeProducts = useMemo(
         () => (data?.products ?? []).filter((p) => !p.archived),
+        [data],
+    );
+    const archivedProducts = useMemo(
+        () => (data?.products ?? []).filter((p) => p.archived),
         [data],
     );
 
@@ -598,6 +603,22 @@ export function Dashboard({
                                                 setSimulator(d.simulator);
                                             },
                                             `${p.title} archived`,
+                                        );
+                                    }
+                                }}
+                            />
+                            <ArchivedProducts
+                                products={archivedProducts}
+                                readOnly={readOnly}
+                                onRestore={async (p) => {
+                                    if (actions) {
+                                        await run(
+                                            () => actions.restore(p.id),
+                                            (d) => {
+                                                setProduct(d.product);
+                                                setSimulator(d.simulator);
+                                            },
+                                            `${p.title} restored`,
                                         );
                                     }
                                 }}

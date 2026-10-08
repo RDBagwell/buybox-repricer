@@ -89,6 +89,32 @@ final class SimulatorControl
         $this->publisher->publish($event);
     }
 
+    /**
+     * The bot types competing on a listing, so an archived product can be restored with the same
+     * competitors. Empty when the listing (or the world) does not exist.
+     *
+     * @return list<string>
+     */
+    public function listingBots(string $asin): array
+    {
+        if (! $this->worlds->exists()) {
+            return [];
+        }
+        $listing = $this->worlds->load()->listing($asin);
+        if ($listing === null) {
+            return [];
+        }
+
+        $bots = [];
+        foreach ($listing->offers as $offer) {
+            if ($offer->bot !== null) {
+                $bots[] = $offer->bot;
+            }
+        }
+
+        return $bots;
+    }
+
     /** Take a listing off the marketplace (its offers go with it). */
     public function removeListing(string $asin): bool
     {

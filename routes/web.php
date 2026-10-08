@@ -43,6 +43,7 @@ Route::prefix('api')->name('api.')->group(function () {
 
         Route::post('products', [ProductController::class, 'store'])->name('products.store');
         Route::post('products/{product}/archive', [ProductController::class, 'archive'])->name('products.archive');
+        Route::post('products/{product}/restore', [ProductController::class, 'restore'])->name('products.restore');
         Route::post('products/{product}/pause', [ProductController::class, 'pause'])->name('products.pause');
         Route::post('products/{product}/resume', [ProductController::class, 'resume'])->name('products.resume');
         Route::put('products/{product}/rule', [ProductController::class, 'updateRule'])->name('products.rule');
