@@ -154,7 +154,7 @@ test('shows a dropped connection and catches up when it returns', async ({
         .not.toBe(lastSeen);
 });
 
-test('adds a product through the form, sees it repriced, then archives it', async ({
+test('adds a product through the form, sees it repriced, archives it, then restores it', async ({
     page,
     isMobile,
 }) => {
@@ -189,6 +189,14 @@ test('adds a product through the form, sees it repriced, then archives it', asyn
     await expect(
         page.getByRole('button', { name: `Archive ${title}` }),
     ).toHaveCount(0);
+
+    // Restore brings it back into the table; archive it again so the world stays as it was.
+    await page.getByText(/^Archived \(\d+\)$/).click();
+    await page.getByRole('button', { name: `Restore ${title}` }).click();
+    await expect(page.getByText(`${title} restored`)).toBeVisible();
+    await page.getByRole('button', { name: `Archive ${title}` }).click();
+    await page.getByRole('button', { name: 'Archive product' }).click();
+    await expect(page.getByText(`${title} archived`)).toBeVisible();
 });
 
 test('the rule editor previews what the draft rules would do, live', async ({

@@ -304,7 +304,8 @@ Laravel Reverb for live updates.
       starts on it at once. Validated like the rule editor, on the client and the server.
     - **Archive**: products are archived, never deleted, because their decisions and audit
       trail are append-only. An archived product stops repricing and leaves the simulation;
-      its history stays.
+      its history stays. **Restore** (under _Archived_) brings it back against the same
+      competitor bots it had, which the archive's audit row records.
     - The rule editor: server validation in a FormRequest, mirrored on the client, and every
       change audited with before and after values.
 - **Always-visible kill switch** with a confirmation, plus a dry-run toggle with a banner.

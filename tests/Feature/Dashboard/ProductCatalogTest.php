@@ -116,3 +116,57 @@ it('does not count archived products against the demo cap', function () {
     $this->postJson('/api/products/'.Market::product()->id.'/archive', ['confirm' => true])->assertOk();
     $this->postJson('/api/products', newProduct())->assertCreated();
 });
+
+it('restores an archived product with the competitors it had, and repricing resumes', function () {
+    $product = Market::product();
+    $bots = fn () => DB::table('sim_offers')->where('asin', $product->asin)->whereNotNull('bot')->orderBy('seller_id')->pluck('bot')->all();
+    $before = $bots();
+    expect($before)->not->toBeEmpty();
+
+    $this->postJson("/api/products/{$product->id}/archive", ['confirm' => true])->assertOk();
+    expect(DB::table('sim_listings')->where('asin', $product->asin)->exists())->toBeFalse();
+
+    $this->postJson("/api/products/{$product->id}/restore", [])->assertUnprocessable(); // needs confirm
+    $r = $this->postJson("/api/products/{$product->id}/restore", ['confirm' => true])->assertOk();
+
+    $product->refresh();
+    expect($product->archived_at)->toBeNull()
+        ->and($product->paused)->toBeFalse()
+        ->and($r->json('product.archived'))->toBeFalse()
+        ->and(DB::table('sim_listings')->where('asin', $product->asin)->exists())->toBeTrue()
+        ->and($bots())->toBe($before)
+        ->and(AuditEntry::query()->where('action', 'product.restored')->where('product_id', $product->id)->firstOrFail()->after['competitors'] ?? null)
+        ->toEqualCanonicalizing($before);
+
+    // Back in the war: new decisions are made for it again.
+    $decisions = PriceDecision::query()->where('product_id', $product->id)->count();
+    app(HeadlessLoop::class)->run(40);
+    expect(PriceDecision::query()->where('product_id', $product->id)->count())->toBeGreaterThan($decisions);
+
+    // Restoring an active product is a no-op.
+    $this->postJson("/api/products/{$product->id}/restore", ['confirm' => true])->assertOk();
+    expect(AuditEntry::query()->where('action', 'product.restored')->count())->toBe(1);
+});
+
+it('restores against a penny-pincher and an anchor when no competitors were recorded', function () {
+    $product = Market::product();
+    // Archived the old way: no competitors on the audit row.
+    $product->forceFill(['archived_at' => now(), 'paused' => true])->save();
+    DB::table('sim_offers')->where('asin', $product->asin)->delete();
+    DB::table('sim_listings')->where('asin', $product->asin)->delete();
+
+    $this->postJson("/api/products/{$product->id}/restore", ['confirm' => true])->assertOk();
+    expect(DB::table('sim_offers')->where('asin', $product->asin)->whereNotNull('bot')->orderBy('bot')->pluck('bot')->all())
+        ->toBe(['anchor', 'penny_pincher']);
+});
+
+it('respects the demo cap when restoring', function () {
+    config(['demo.max_products' => 6]);
+    $product = Market::product();
+    $this->postJson("/api/products/{$product->id}/archive", ['confirm' => true])->assertOk();
+    $this->postJson('/api/products', newProduct())->assertCreated();
+
+    $this->postJson("/api/products/{$product->id}/restore", ['confirm' => true])
+        ->assertUnprocessable()->assertJsonPath('message', 'The public demo holds at most 6 products. Archive one first.');
+    expect($product->refresh()->archived_at)->not->toBeNull();
+});

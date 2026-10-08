@@ -92,6 +92,8 @@ export class LiveSource implements DataSource {
         createProduct: (payload) => request('POST', '/api/products', payload),
         archive: (id) =>
             request('POST', `/api/products/${id}/archive`, { confirm: true }),
+        restore: (id) =>
+            request('POST', `/api/products/${id}/restore`, { confirm: true }),
         simulator: {
             get: () => request('GET', '/api/simulator'),
             speed: (speed) =>
