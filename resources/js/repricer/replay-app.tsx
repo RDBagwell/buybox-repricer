@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Dashboard } from './components/dashboard';
+import { DashboardErrorBoundary } from './components/error-boundary';
 import type { Recording } from './data/recording';
 import { ReplaySource } from './data/replay-source';
 import type { DashboardConfig } from './types';
@@ -99,13 +100,15 @@ export function ReplayApp({
     }
 
     return (
-        <Dashboard
-            source={source}
-            config={config}
-            initial={recording.initial}
-            liveUrl={liveUrl}
-            liveReady={liveReady}
-            replayMeta={recording.meta}
-        />
+        <DashboardErrorBoundary>
+            <Dashboard
+                source={source}
+                config={config}
+                initial={recording.initial}
+                liveUrl={liveUrl}
+                liveReady={liveReady}
+                replayMeta={recording.meta}
+            />
+        </DashboardErrorBoundary>
     );
 }
