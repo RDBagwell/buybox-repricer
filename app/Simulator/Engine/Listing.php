@@ -4,6 +4,12 @@ namespace App\Simulator\Engine;
 
 final class Listing
 {
+    /** Sellers share this listing and compete for one featured offer (Amazon-style). */
+    public const BUYBOX = 'buybox';
+
+    /** Every seller lists separately; no Buy Box, only price against comparable listings. */
+    public const OPEN = 'open';
+
     /**
      * @param  array<string, SimOffer>  $offers  keyed by seller id
      */
@@ -12,6 +18,7 @@ final class Listing
         public readonly string $title,
         public array $offers,
         public ?string $buyBoxSellerId = null,
+        public readonly string $model = self::BUYBOX,
     ) {
         ksort($this->offers, SORT_STRING);
     }

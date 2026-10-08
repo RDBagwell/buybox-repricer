@@ -42,6 +42,7 @@ final class SimulatorPanel
             'listings' => array_values(array_map(fn ($l) => [
                 'asin' => $l->asin,
                 'title' => $l->title,
+                'model' => $l->model,
                 'buybox' => $l->buyBoxSellerId === $ours ? 'ours' : $l->buyBoxSellerId,
                 'offers' => array_values(array_map(fn (SimOffer $o) => [
                     'seller' => $o->sellerId === $ours ? 'ours' : $o->sellerId,

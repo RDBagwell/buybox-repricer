@@ -55,6 +55,8 @@ export interface Rule {
     margin_floor: number;
 }
 
+export type Channel = 'buybox' | 'open';
+
 export interface Product {
     id: number;
     sku: string;
@@ -71,7 +73,12 @@ export interface Product {
     /** Archived products stay in the list (for decision history) but leave the table. */
     archived?: boolean;
     buybox: { winner: string | null; ours: boolean; since: string | null };
-    win_rate_24h_bps: number;
+    /** Null on open-listing marketplaces (there is no Buy Box to win). */
+    win_rate_24h_bps: number | null;
+    /** 'buybox': sellers share a listing and compete for one featured offer; 'open': no Buy Box. */
+    channel?: Channel;
+    /** Open listings only: our price position among comparable listings (1 = cheapest). */
+    rank?: { position: number; of: number } | null;
     reprices_last_hour: number;
     breaker_limit: number;
     rule: Rule | null;
@@ -109,6 +116,7 @@ export interface SimulatorState {
         asin: string;
         title: string;
         buybox: string | null;
+        model?: 'buybox' | 'open';
         offers: SimOffer[];
     }[];
 }

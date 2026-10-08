@@ -31,11 +31,15 @@ class CatalogSeeder extends Seeder
             // A quiet listing against one anchored seller.
             ['asin' => 'B0SIM00005', 'sku' => 'BTL-INS-750', 'title' => 'Insulated Water Bottle, 750 ml', 'cost' => 900, 'fees' => 330, 'shipping' => 0, 'price' => 2199,
                 'rule' => ['strategy' => 'match_lowest', 'offset' => 0, 'floor' => 1799, 'ceiling' => 2599, 'min_margin' => 250, 'max_step_pct' => 10, 'cooldown_sec' => 600, 'no_competition' => 'raise_to_ceiling']],
+            // On an open-listing marketplace (no Buy Box): stay just under the cheapest comparable listing.
+            ['asin' => 'B0SIM00006', 'channel' => 'open', 'sku' => 'RNG-LED-10', 'title' => 'LED Ring Light, 10 in', 'cost' => 900, 'fees' => 400, 'shipping' => 0, 'price' => 2499,
+                'rule' => ['strategy' => 'beat_lowest', 'offset' => 10, 'floor' => 1799, 'ceiling' => 2999, 'min_margin' => 300, 'max_step_pct' => 5, 'cooldown_sec' => 180]],
         ];
 
         foreach ($catalog as $item) {
             $product = Product::query()->updateOrCreate(['sku' => $item['sku']], [
                 'asin' => $item['asin'],
+                'channel' => $item['channel'] ?? 'buybox',
                 'title' => $item['title'],
                 'cost' => $item['cost'],
                 'fees' => $item['fees'],

@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ActionResult, DataSource } from '../data/source';
 import { useDashboard } from '../data/use-dashboard';
+import type { FeedFilter, FeedKind } from '../lib/feed-filter';
+import { DEFAULT_FEED_FILTER, FEED_KINDS } from '../lib/feed-filter';
 import { formatCents } from '../lib/money';
 import { formatMarketTime, marketDay } from '../lib/time';
 import type {
@@ -156,6 +158,43 @@ function Section({
     );
 }
 
+const FEED_FILTER_KEY = 'repricer.feed-filter';
+
+/** The feed's chips and cooldown toggle, remembered per browser (a convenience, never required). */
+function loadFeedFilter(): FeedFilter {
+    try {
+        const raw = window.localStorage.getItem(FEED_FILTER_KEY);
+        const saved = raw ? (JSON.parse(raw) as Partial<FeedFilter>) : {};
+        const kinds = Array.isArray(saved.kinds)
+            ? saved.kinds.filter((k): k is FeedKind =>
+                  FEED_KINDS.some((f) => f.kind === k),
+              )
+            : DEFAULT_FEED_FILTER.kinds;
+
+        return {
+            productId: null,
+            kinds,
+            hideCooldown:
+                typeof saved.hideCooldown === 'boolean'
+                    ? saved.hideCooldown
+                    : DEFAULT_FEED_FILTER.hideCooldown,
+        };
+    } catch {
+        return DEFAULT_FEED_FILTER;
+    }
+}
+
+function saveFeedFilter(f: FeedFilter): void {
+    try {
+        window.localStorage.setItem(
+            FEED_FILTER_KEY,
+            JSON.stringify({ kinds: f.kinds, hideCooldown: f.hideCooldown }),
+        );
+    } catch {
+        // storage unavailable (private mode): the filter just isn't remembered
+    }
+}
+
 /** Open on the featured product (the liveliest price war), else the one with most recent activity. */
 function busiestProduct(
     state: DashboardState,
@@ -198,6 +237,7 @@ export function Dashboard({
     const [editing, setEditing] = useState<Product | null>(null);
     const [adding, setAdding] = useState(false);
     const [feedFilter, setFeedFilter] = useState<'all' | 'selected'>('all');
+    const [feedKinds, setFeedKinds] = useState<FeedFilter>(loadFeedFilter);
     const actions = source.actions;
     const readOnly = actions === null;
 
@@ -459,9 +499,13 @@ export function Dashboard({
                                             selectedProduct.current_price,
                                         )}{' '}
                                         ·{' '}
-                                        {selectedProduct.buybox.ours
-                                            ? 'we hold the Buy Box'
-                                            : `Buy Box: ${selectedProduct.buybox.winner ?? 'none'}`}
+                                        {selectedProduct.channel === 'open'
+                                            ? selectedProduct.rank
+                                                ? `open listings: price rank ${selectedProduct.rank.position} of ${selectedProduct.rank.of}`
+                                                : 'open listings'
+                                            : selectedProduct.buybox.ours
+                                              ? 'we hold the Buy Box'
+                                              : `Buy Box: ${selectedProduct.buybox.winner ?? 'none'}`}
                                     </span>
                                 )
                             }
@@ -490,6 +534,7 @@ export function Dashboard({
                                 ))}
                             </div>
                             <PriceChart
+                                hasBuyBox={selectedProduct?.channel !== 'open'}
                                 series={
                                     selected !== null
                                         ? model.series[selected]
@@ -591,9 +636,17 @@ export function Dashboard({
                             <DecisionFeed
                                 decisions={data.decisions}
                                 products={data.products}
-                                productFilter={
-                                    feedFilter === 'selected' ? selected : null
-                                }
+                                filter={{
+                                    ...feedKinds,
+                                    productId:
+                                        feedFilter === 'selected'
+                                            ? selected
+                                            : null,
+                                }}
+                                onFilterChange={(f) => {
+                                    setFeedKinds(f);
+                                    saveFeedFilter(f);
+                                }}
                                 expandFirst={false}
                             />
                         </div>
@@ -667,6 +720,20 @@ export function Dashboard({
             <RuleEditor
                 product={editing}
                 onClose={() => setEditing(null)}
+                onPreview={
+                    actions
+                        ? async (p, payload) => {
+                              const r = await actions.previewRule(
+                                  p.id,
+                                  payload,
+                              );
+
+                              return r.ok
+                                  ? r.data.preview
+                                  : { available: false, message: r.message };
+                          }
+                        : undefined
+                }
                 onSave={async (p, payload) => {
                     if (!actions) {
                         return { ok: false, message: 'Read-only replay.' };

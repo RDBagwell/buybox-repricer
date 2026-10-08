@@ -1,6 +1,12 @@
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import type { FeedFilter, FeedKind } from '../lib/feed-filter';
+import {
+    DEFAULT_FEED_FILTER,
+    FEED_KINDS,
+    filterDecisions,
+} from '../lib/feed-filter';
 import { formatCents } from '../lib/money';
 import { formatMarketTime } from '../lib/time';
 import type { Badge } from '../lib/trace';
@@ -143,43 +149,120 @@ function DecisionRow({
 export function DecisionFeed({
     decisions,
     products,
-    productFilter,
+    filter,
+    onFilterChange,
     expandFirst = false,
 }: {
     decisions: Decision[];
     products: Product[];
-    productFilter: number | null;
+    filter: FeedFilter;
+    onFilterChange: (f: FeedFilter) => void;
     expandFirst?: boolean;
 }) {
     const byId = new Map(products.map((p) => [p.id, p]));
-    const shown =
-        productFilter === null
-            ? decisions
-            : decisions.filter((d) => d.product_id === productFilter);
-
-    if (shown.length === 0) {
-        return (
-            <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                No decisions yet. They appear here as soon as a competitor
-                moves.
-            </p>
-        );
-    }
+    const { shown, counts, cooldownHidden } = filterDecisions(
+        decisions,
+        filter,
+    );
+    const toggleKind = (kind: FeedKind) =>
+        onFilterChange({
+            ...filter,
+            kinds: filter.kinds.includes(kind)
+                ? filter.kinds.filter((k) => k !== kind)
+                : [...filter.kinds, kind],
+        });
+    const filtered =
+        filter.kinds.length < FEED_KINDS.length || cooldownHidden > 0;
 
     return (
-        <ol
-            aria-live="polite"
-            aria-label="Pricing decisions, newest first"
-            className="max-h-[38rem] overflow-y-auto"
-        >
-            {shown.slice(0, 80).map((d, i) => (
-                <DecisionRow
-                    key={d.id}
-                    decision={d}
-                    product={byId.get(d.product_id)}
-                    defaultOpen={expandFirst && i === 0}
-                />
-            ))}
-        </ol>
+        <div>
+            <div
+                className="mb-2 flex flex-wrap items-center gap-1.5 px-1"
+                role="group"
+                aria-label="Show decisions of these kinds"
+            >
+                {FEED_KINDS.map(({ kind, label, hint }) => {
+                    const on = filter.kinds.includes(kind);
+
+                    return (
+                        <button
+                            key={kind}
+                            type="button"
+                            aria-pressed={on}
+                            title={hint}
+                            onClick={() => toggleKind(kind)}
+                            className={cn(
+                                'rounded-full border px-2.5 py-0.5 text-xs tabular-nums transition-colors',
+                                on
+                                    ? 'border-foreground/20 bg-muted font-medium text-foreground'
+                                    : 'border-border text-muted-foreground line-through decoration-muted-foreground/50 hover:bg-muted/50',
+                            )}
+                        >
+                            {label} {counts[kind]}
+                        </button>
+                    );
+                })}
+                <label className="ml-auto flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+                    <input
+                        type="checkbox"
+                        checked={filter.hideCooldown}
+                        onChange={(e) =>
+                            onFilterChange({
+                                ...filter,
+                                hideCooldown: e.target.checked,
+                            })
+                        }
+                        className="accent-[#0072B2]"
+                    />
+                    Hide cooldown skips
+                    {filter.hideCooldown && cooldownHidden > 0 && (
+                        <span className="tabular-nums">({cooldownHidden})</span>
+                    )}
+                </label>
+            </div>
+
+            {shown.length === 0 ? (
+                <div className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    {filtered ? (
+                        <>
+                            <p>No decisions match these filters.</p>
+                            <button
+                                type="button"
+                                className="mt-2 text-xs font-medium text-foreground underline underline-offset-2"
+                                onClick={() =>
+                                    onFilterChange({
+                                        ...DEFAULT_FEED_FILTER,
+                                        productId: filter.productId,
+                                        hideCooldown: false,
+                                    })
+                                }
+                            >
+                                Show everything
+                            </button>
+                        </>
+                    ) : (
+                        <p>
+                            No decisions yet. They appear here as soon as a
+                            competitor moves.
+                        </p>
+                    )}
+                </div>
+            ) : (
+                <ol
+                    aria-live="polite"
+                    aria-label="Pricing decisions, newest first"
+                    className="max-h-[38rem] overflow-y-auto"
+                >
+                    {shown.slice(0, 80).map((d, i) => (
+                        <DecisionRow
+                            key={d.id}
+                            decision={d}
+                            product={byId.get(d.product_id)}
+                            defaultOpen={expandFirst && i === 0}
+                        />
+                    ))}
+                </ol>
+            )}
+        </div>
     );
 }

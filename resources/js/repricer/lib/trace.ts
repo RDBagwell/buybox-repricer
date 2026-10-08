@@ -273,3 +273,40 @@ export function badgeFor(d: Pick<Decision, 'outcome' | 'push'>): Badge {
 
     return d.outcome;
 }
+
+/** The rule editor preview: the pipeline's answer for draft rules, nothing pushed. */
+export interface RulePreviewResult {
+    available: boolean;
+    message?: string;
+    snapshot_time?: string;
+    outcome?: 'reprice' | 'no_change' | 'skipped' | 'config_error';
+    old_price?: number;
+    new_price?: number | null;
+    reason?: string;
+    trace?: TraceEntry[];
+    notes?: string[];
+}
+
+/** One line for the preview, e.g. "Strategy proposed $13.82 → margin OK → floor OK → would set $13.82". */
+export function describePreview(p: RulePreviewResult): string {
+    if (!p.available) {
+        return p.message ?? 'No preview available.';
+    }
+    const steps = (p.trace ?? [])
+        .map(describeStep)
+        .filter((s): s is TraceStep => s !== null)
+        .map((s) => s.text);
+    const ending =
+        p.outcome === 'reprice' && p.new_price != null
+            ? `would set ${formatCents(p.new_price)}`
+            : p.outcome === 'no_change' && p.old_price != null
+              ? `would keep ${formatCents(p.old_price)}`
+              : null;
+    const parts = ending ? [...steps, ending] : steps;
+    if (parts.length === 0) {
+        return p.reason ?? '';
+    }
+    const text = parts.join(' → ');
+
+    return text.charAt(0).toUpperCase() + text.slice(1);
+}

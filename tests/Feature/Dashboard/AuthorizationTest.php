@@ -17,6 +17,7 @@ dataset('mutations', [
     'pause' => ['post', '/api/products/{id}/pause', []],
     'resume' => ['post', '/api/products/{id}/resume', ['acknowledge' => true]],
     'rule' => ['put', '/api/products/{id}/rule', ['strategy' => 'beat_buybox', 'offset' => 10, 'floor' => 2699, 'ceiling' => 3499, 'min_margin' => 300, 'max_step_pct' => 5, 'cooldown_sec' => 120]],
+    'rule preview' => ['post', '/api/products/{id}/rule/preview', ['strategy' => 'beat_buybox', 'offset' => 10, 'floor' => 2699, 'ceiling' => 3499, 'min_margin' => 300, 'max_step_pct' => 5, 'cooldown_sec' => 120]],
     'speed' => ['post', '/api/simulator/speed', ['speed' => 10]],
     'running' => ['post', '/api/simulator/running', ['running' => false]],
     'faults' => ['post', '/api/simulator/faults', ['http_429_bps' => 100, 'http_503_bps' => 100]],
@@ -74,7 +75,7 @@ it('shows guests the welcome page in operator mode and the dashboard in demo mod
     config(['demo.enabled' => false]);
     $this->get('/')->assertInertia(fn ($page) => $page->component('welcome'));
     config(['demo.enabled' => true]);
-    $this->get('/')->assertInertia(fn ($page) => $page->component('repricer/dashboard')->has('initial.products', 5));
+    $this->get('/')->assertInertia(fn ($page) => $page->component('repricer/dashboard')->has('initial.products', 6));
 });
 
 it('rate-limits mutations per visitor', function () {

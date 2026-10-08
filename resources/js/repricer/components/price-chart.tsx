@@ -20,6 +20,8 @@ interface Props {
     series: Series | undefined;
     height?: number;
     ourLabel?: string;
+    /** Open-listing marketplaces have no Buy Box: no "held" shading or legend entry. */
+    hasBuyBox?: boolean;
 }
 
 type Row = { t: number } & Record<string, number | null>;
@@ -64,6 +66,7 @@ export function PriceChart({
     series,
     height = 320,
     ourLabel = 'Our price',
+    hasBuyBox = true,
 }: Props) {
     const view = useMemo(() => {
         if (!series || series.points.length === 0) {
@@ -254,16 +257,22 @@ export function PriceChart({
                 </ComposedChart>
             </ResponsiveContainer>
             <figcaption className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                    <span
-                        className="inline-block h-3 w-5 rounded-sm"
-                        style={{
-                            background: OURS_HELD,
-                            outline: `1px solid ${OURS}`,
-                        }}
-                    />{' '}
-                    we held the Buy Box
-                </span>
+                {hasBuyBox ? (
+                    <span className="inline-flex items-center gap-1.5">
+                        <span
+                            className="inline-block h-3 w-5 rounded-sm"
+                            style={{
+                                background: OURS_HELD,
+                                outline: `1px solid ${OURS}`,
+                            }}
+                        />{' '}
+                        we held the Buy Box
+                    </span>
+                ) : (
+                    <span>
+                        Open listings: no Buy Box, price vs comparable listings
+                    </span>
+                )}
                 <span className="inline-flex items-center gap-1.5">
                     <span
                         className="inline-block h-3 w-5 rounded-sm"

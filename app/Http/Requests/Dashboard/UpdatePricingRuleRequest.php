@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Dashboard;
 
+use App\Repricer\Catalog\Channel;
 use App\Repricer\Models\Product;
 use App\Repricer\Rules\NoCompetitionAction;
 use App\Repricer\Rules\Strategy;
@@ -54,6 +55,14 @@ class UpdatePricingRuleRequest extends FormRequest
         ];
     }
 
+    /** "Beat the Buy Box holder" means nothing where there is no Buy Box. */
+    public static function checkStrategyFitsChannel(Validator $validator, string $strategy, Channel $channel): void
+    {
+        if (! $channel->hasBuyBox() && $strategy === Strategy::BeatBuyBox->value) {
+            $validator->errors()->add('strategy', 'There is no Buy Box on an open-listing marketplace: beat or match the lowest price instead.');
+        }
+    }
+
     /**
      * floor <= ceiling, and floor >= cost + fees + minimum margin (all integer cents).
      */
@@ -83,6 +92,7 @@ class UpdatePricingRuleRequest extends FormRequest
             $product = $this->route('product');
             self::checkBounds($validator, (int) $this->input('floor'), (int) $this->input('ceiling'),
                 $product->cost->cents, $product->fees->cents, (int) $this->input('min_margin'));
+            self::checkStrategyFitsChannel($validator, (string) $this->input('strategy'), $product->channel);
         }];
     }
 }

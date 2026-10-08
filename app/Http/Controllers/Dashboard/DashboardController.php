@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Dashboard;
 
+use App\Demo\ResetSchedule;
 use App\Demo\SimulatorPanel;
 use App\Http\Controllers\Controller;
 use App\Repricer\Dashboard\DashboardChannel;
@@ -34,7 +35,7 @@ class DashboardController extends Controller
                 'private_channel' => DashboardChannel::isPrivate(),
                 'reverb' => config('demo.reverb_client'),
                 'our_seller_id' => config('market.seller_id'),
-                'reset_minutes' => config('demo.enabled') ? (int) config('demo.reset_minutes') : null,
+                'reset_minutes' => config('demo.enabled') ? ResetSchedule::minutes((int) config('demo.reset_minutes')) : null,
                 'featured_sku' => config('demo.featured_sku'),
             ],
         ]);

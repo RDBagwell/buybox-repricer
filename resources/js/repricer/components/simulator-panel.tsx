@@ -201,6 +201,11 @@ export function SimulatorPanel({ simulator, readOnly, run, actions }: Props) {
                             <div className="min-w-0">
                                 <div className="truncate font-medium">
                                     {l.title}
+                                    {l.model === 'open' && (
+                                        <span className="ml-1.5 rounded bg-violet-100 px-1.5 py-0.5 align-middle text-[10px] font-semibold text-violet-900 dark:bg-violet-900/40 dark:text-violet-100">
+                                            Open listings
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                     {l.asin}

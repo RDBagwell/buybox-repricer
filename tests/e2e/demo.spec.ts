@@ -23,16 +23,18 @@ test('shows the repricer fighting for the Buy Box within 10 seconds', async ({
         timeout: 10_000,
     });
 
-    // And it is live: a new decision streams in.
+    // And it is live: a new decision streams in. Cooldown skips are hidden by default, so a
+    // new decision shows either as a new top row or in the toggle's hidden count.
     const feed = page.getByRole('list', {
         name: 'Pricing decisions, newest first',
     });
-    const firstBefore = await feed.locator('li').first().textContent();
+    const cooldown = page.locator('label', { hasText: 'Hide cooldown skips' });
+    const activity = async () =>
+        `${await feed.locator('li').first().textContent()}|${await cooldown.textContent()}`;
+    const before = await activity();
     await expect
-        .poll(async () => feed.locator('li').first().textContent(), {
-            timeout: 10_000 - (Date.now() - started),
-        })
-        .not.toBe(firstBefore);
+        .poll(activity, { timeout: 10_000 - (Date.now() - started) })
+        .not.toBe(before);
 
     expect(Date.now() - started).toBeLessThan(10_000);
 });
@@ -187,4 +189,84 @@ test('adds a product through the form, sees it repriced, then archives it', asyn
     await expect(
         page.getByRole('button', { name: `Archive ${title}` }),
     ).toHaveCount(0);
+});
+
+test('the rule editor previews what the draft rules would do, live', async ({
+    page,
+    isMobile,
+}) => {
+    await page.goto('/');
+    await page
+        .getByRole('button', {
+            name: isMobile ? 'Rules' : /Edit rules for Stainless French Press/,
+        })
+        .first()
+        .click();
+    const preview = page.getByTestId('rule-preview');
+    await expect(preview).toContainText(/would (set|keep) \$/, {
+        timeout: 5_000,
+    });
+
+    // Raise the floor above anything the war allows: the preview follows, nothing is saved.
+    await page.getByLabel('Step limit (%)').fill('50');
+    await page.getByLabel('Floor').fill('33.00');
+    await expect(preview).toContainText('would set $33.00', {
+        timeout: 5_000,
+    });
+    await page.getByRole('button', { name: 'Cancel' }).click();
+});
+
+test('a rule preset fills the editor from the product’s own cost and fees', async ({
+    page,
+    isMobile,
+}) => {
+    await page.goto('/');
+    await page
+        .getByRole('button', {
+            name: isMobile ? 'Rules' : /Edit rules for Stainless French Press/,
+        })
+        .first()
+        .click();
+    await page.getByRole('button', { name: 'Margin-first' }).click();
+    // $14.00 cost + $4.35 fees, 30% margin ($5.51): the floor sits at the margin floor.
+    await expect(page.getByLabel('Floor')).toHaveValue('23.86');
+    await expect(page.getByLabel('Strategy')).toHaveValue('match_lowest');
+    await expect(page.getByText(/is below the margin floor/)).toHaveCount(0);
+    await expect(page.getByTestId('rule-preview')).toContainText(
+        /would (set|keep) \$/,
+    );
+    await page.getByRole('button', { name: 'Cancel' }).click();
+});
+
+test('an open-listing marketplace (no Buy Box) shows price rank, and can be chosen for a new product', async ({
+    page,
+    isMobile,
+}) => {
+    await page.goto('/');
+    // The seeded ring light sells where every seller lists separately: rank, not Buy Box.
+    const ring = isMobile
+        ? page.locator('li', { hasText: 'LED Ring Light, 10 in' })
+        : page.locator('tr', { hasText: 'LED Ring Light, 10 in' });
+    await expect(ring.getByText('Open listings')).toBeVisible();
+    await expect(ring.getByText(/(Cheapest|#\d) of \d/)).toBeVisible({
+        timeout: 15_000,
+    });
+
+    const sku = `E2E-O${isMobile ? 'P' : 'D'}-${Date.now().toString(36).toUpperCase()}`;
+    await page.getByRole('button', { name: 'Add product' }).click();
+    const dialog = page.getByRole('dialog');
+    await dialog.getByLabel('Marketplace type').selectOption('open');
+    // "Beat the Buy Box holder" is not offered where there is no Buy Box.
+    await expect(dialog.getByLabel('Strategy')).toHaveValue('beat_lowest');
+    await dialog.getByLabel('Title').fill(`Phone Tripod ${sku}`);
+    await dialog.getByLabel('SKU').fill(sku);
+    await dialog.getByRole('button', { name: 'Add product' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText(`Phone Tripod ${sku} added`)).toBeVisible();
+
+    // Leave the shared demo world as it was.
+    await page
+        .getByRole('button', { name: `Archive Phone Tripod ${sku}` })
+        .click();
+    await page.getByRole('button', { name: 'Archive product' }).click();
 });

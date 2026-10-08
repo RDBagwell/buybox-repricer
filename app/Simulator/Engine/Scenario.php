@@ -13,7 +13,7 @@ final class Scenario
     public const OUR_STORE_PLACEHOLDER = 'our_store';
 
     /**
-     * @param  list<array{asin: string, title: string, offers: list<array<string, mixed>>}>  $listings
+     * @param  list<array{asin: string, title: string, model?: string, offers: list<array<string, mixed>>}>  $listings
      */
     public static function build(array $listings, int $seed, string $ourSellerId, SimClock $clock, BuyBoxScorer $scorer): World
     {
@@ -34,8 +34,10 @@ final class Scenario
                     botParams: (array) ($o['params'] ?? []),
                 );
             }
-            $listing = new Listing($def['asin'], $def['title'], $offers);
-            $listing->buyBoxSellerId = $scorer->decide($listing->activeOffers(), null)->winner;
+            $listing = new Listing($def['asin'], $def['title'], $offers, null, $def['model'] ?? Listing::BUYBOX);
+            if ($listing->model === Listing::BUYBOX) {
+                $listing->buyBoxSellerId = $scorer->decide($listing->activeOffers(), null)->winner;
+            }
             $built[$def['asin']] = $listing;
         }
 

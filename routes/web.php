@@ -55,6 +55,10 @@ Route::prefix('api')->name('api.')->group(function () {
         Route::post('simulator/stockout', [SimulatorController::class, 'stockout'])->name('simulator.stockout');
     });
 
+    // Read-only, called as the rule editor is typed in: its own, looser limit.
+    Route::post('products/{product}/rule/preview', [ProductController::class, 'previewRule'])
+        ->middleware(['can:operate', 'throttle:dashboard-preview'])->name('products.rule.preview');
+
     Route::post('simulator/reset', [SimulatorController::class, 'reset'])
         ->middleware(['can:operate', 'throttle:dashboard-reset'])->name('simulator.reset');
 });

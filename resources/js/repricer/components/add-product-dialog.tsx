@@ -11,8 +11,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { formatCents, parseMoney } from '../lib/money';
+import { centsToInput, formatCents, parseMoney } from '../lib/money';
+import { presetRule } from '../lib/rule-presets';
 import type { ProductForm, ProductPayload } from '../lib/product-validation';
+import { RulePresetButtons } from './rule-presets';
 import {
     blankProductForm,
     MAX_COMPETITORS,
@@ -234,6 +236,45 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                         }
                     }}
                 >
+                    <div className="space-y-1.5">
+                        <Label htmlFor="product-channel">
+                            Marketplace type
+                        </Label>
+                        <select
+                            id="product-channel"
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground [&>option]:bg-background [&>option]:text-foreground"
+                            value={form.channel}
+                            onChange={(e) => {
+                                const channel = e.target
+                                    .value as ProductForm['channel'];
+                                setTouched((t) => new Set(t).add('channel'));
+                                setForm({
+                                    ...form,
+                                    channel,
+                                    // There is no holder to beat on open listings.
+                                    strategy:
+                                        channel === 'open' &&
+                                        form.strategy === 'beat_buybox'
+                                            ? 'beat_lowest'
+                                            : form.strategy,
+                                });
+                            }}
+                        >
+                            <option value="buybox">
+                                Buy Box marketplace: sellers share one listing
+                            </option>
+                            <option value="open">
+                                Open listings, no Buy Box (social-commerce
+                                style)
+                            </option>
+                        </select>
+                        <p className="text-xs text-muted-foreground">
+                            {form.channel === 'open'
+                                ? 'Every seller lists separately; the repricer competes on price against comparable listings.'
+                                : 'Sellers compete for one featured offer on a shared listing.'}
+                        </p>
+                    </div>
+
                     <fieldset className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <legend className="sr-only">Product</legend>
                         {PRODUCT_FIELDS.map(renderField)}
@@ -243,6 +284,38 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                         <legend className="text-sm font-medium">
                             Pricing rules
                         </legend>
+                        <RulePresetButtons
+                            disabled={cost === null || fees === null}
+                            onPick={(key) => {
+                                if (cost === null || fees === null) {
+                                    return;
+                                }
+                                const rule = presetRule(key, {
+                                    cost,
+                                    fees,
+                                    ceiling: parseMoney(form.ceiling),
+                                    channel: form.channel,
+                                });
+                                // Keep the starting price inside the new floor..ceiling.
+                                const floor = parseMoney(rule.floor) ?? 0;
+                                const ceiling = parseMoney(rule.ceiling) ?? 0;
+                                const price = parseMoney(form.price);
+                                const clamped =
+                                    price === null
+                                        ? floor
+                                        : Math.min(
+                                              ceiling,
+                                              Math.max(floor, price),
+                                          );
+                                setTouched((t) => new Set(t));
+                                setServerErrors({});
+                                setForm({
+                                    ...form,
+                                    ...rule,
+                                    price: centsToInput(clamped),
+                                });
+                            }}
+                        />
                         <div className="space-y-1.5">
                             <Label htmlFor="product-strategy">Strategy</Label>
                             <select
@@ -253,8 +326,14 @@ export function AddProductDialog({ open, botTypes, onClose, onCreate }: Props) {
                                     set('strategy', e.target.value)
                                 }
                             >
-                                <option value="beat_buybox">
+                                <option
+                                    value="beat_buybox"
+                                    disabled={form.channel === 'open'}
+                                >
                                     Beat the Buy Box holder
+                                    {form.channel === 'open'
+                                        ? ' (needs a Buy Box)'
+                                        : ''}
                                 </option>
                                 <option value="beat_lowest">
                                     Beat the lowest price

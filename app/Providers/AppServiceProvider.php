@@ -46,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('dashboard-mutations', fn (Request $request) => Limit::perMinute((int) config('demo.mutations_per_minute'))
             ->by($request->user()?->getAuthIdentifier() ?? $request->ip()));
 
+        // The rule editor's live preview is read-only and debounced; allow a steady stream.
+        RateLimiter::for('dashboard-preview', fn (Request $request) => Limit::perMinute(120)
+            ->by($request->user()?->getAuthIdentifier() ?? $request->ip()));
+
         // Resetting the world is heavier: a couple per minute is plenty.
         RateLimiter::for('dashboard-reset', fn (Request $request) => Limit::perMinute(2)
             ->by($request->user()?->getAuthIdentifier() ?? $request->ip()));

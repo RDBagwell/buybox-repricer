@@ -52,8 +52,9 @@ final class SimulatorControl
      * offer-change notification so the repricer decides on it straight away.
      *
      * @param  list<string>  $botTypes
+     * @param  string  $model  Listing::BUYBOX or Listing::OPEN
      */
-    public function addListing(string $asin, string $title, SimOffer $ours, array $botTypes): void
+    public function addListing(string $asin, string $title, SimOffer $ours, array $botTypes, string $model = Listing::BUYBOX): void
     {
         foreach ($botTypes as $type) {
             if (! in_array($type, $this->bots->keys(), true)) {
@@ -61,13 +62,17 @@ final class SimulatorControl
             }
         }
 
-        $event = $this->worlds->db()->transaction(function () use ($asin, $title, $ours, $botTypes) {
+        if (! in_array($model, [Listing::BUYBOX, Listing::OPEN], true)) {
+            throw new InvalidArgumentException("Unknown marketplace model [{$model}].");
+        }
+
+        $event = $this->worlds->db()->transaction(function () use ($asin, $title, $ours, $botTypes, $model) {
             $world = $this->worlds->load(lock: true);
             if ($world->listing($asin) !== null) {
                 throw new InvalidArgumentException("Listing {$asin} already exists.");
             }
 
-            $listing = new Listing($asin, $title, [$ours->sellerId => $ours]);
+            $listing = new Listing($asin, $title, [$ours->sellerId => $ours], null, $model);
             foreach ($botTypes as $type) {
                 $listing->put($this->newBot($listing, $type));
             }

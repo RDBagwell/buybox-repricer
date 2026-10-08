@@ -90,3 +90,24 @@ describe('validateRule (client mirror of the server rules)', () => {
         ).toBeNull();
     });
 });
+
+describe('validateRule on open-listing marketplaces', () => {
+    it('refuses "beat the Buy Box holder" where there is no Buy Box, like the server', () => {
+        const form = {
+            strategy: 'beat_buybox' as const,
+            offset: '0.10',
+            floor: '17.99',
+            ceiling: '29.99',
+            min_margin: '3.00',
+            max_step_pct: '5',
+            cooldown_sec: '180',
+        };
+        const product = { cost: 900, fees: 400, channel: 'open' as const };
+        expect(validateRule(form, product).errors.strategy).toMatch(
+            /no Buy Box/,
+        );
+        expect(
+            validateRule({ ...form, strategy: 'beat_lowest' }, product).errors,
+        ).toEqual({});
+    });
+});

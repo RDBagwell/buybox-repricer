@@ -109,6 +109,16 @@ return [
                 ['seller' => 'NAPTIME', 'price' => 1999, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 95, 'handling_days' => 1, 'bot' => 'sleeper', 'params' => ['price' => 1999, 'awake_ticks' => 80, 'asleep_ticks' => 60]],
             ],
         ],
+        [
+            // An OPEN-listing marketplace (social-commerce style): every seller lists separately,
+            // there is no Buy Box, and what matters is our price against comparable listings.
+            'asin' => 'B0SIM00006', 'title' => 'LED Ring Light, 10 in', 'model' => 'open',
+            'offers' => [
+                ['seller' => 'our_store', 'sku' => 'RNG-LED-10', 'price' => 2499, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 98, 'handling_days' => 1],
+                ['seller' => 'GLOWUP', 'price' => 2399, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 93, 'handling_days' => 2, 'bot' => 'penny_pincher', 'params' => ['floor' => 1899, 'every' => 3]],
+                ['seller' => 'BRIGHTSIDE', 'price' => 2599, 'shipping' => 0, 'fulfillment' => 'merchant', 'rating' => 96, 'handling_days' => 1, 'bot' => 'anchor', 'params' => ['price' => 2599]],
+            ],
+        ],
     ],
 
 ];
