@@ -12,7 +12,7 @@ pushes it. It never goes below a floor, a margin floor or a ceiling, and it expl
 decision in plain language. It runs against a **simulated marketplace** with five competitor
 bots, so you can watch it work without a seller account.
 
-- **Live demo:** _TODO(Robert): add the Render URL once deployed (see [docs/hosting.md](docs/hosting.md))._
+- **Live demo:** https://buybox-repricer-demo.onrender.com/ (hosting notes: [docs/hosting.md](docs/hosting.md)).
   It sleeps when nobody is watching, so the first load takes about a minute.
 - **Instant replay (no server):** _TODO(Robert): https://rdbagwell.github.io/buybox-repricer/ once Pages is enabled._
   This is a real recorded run, played back in your browser.
