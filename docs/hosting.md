@@ -85,9 +85,13 @@ schedule. The shared world won:
 
 1. **Postgres.** Create a free project at [neon.tech](https://neon.tech) and copy its
    connection string. It looks like `postgres://user:pass@ep-xxx.region.aws.neon.tech/neondb?sslmode=require`.
+   Use the **direct** connection: turn _Connection pooling_ off in Neon's Connect dialog, so
+   the host has no `-pooler` in it. Through the pooler, migrations fail with
+   `SQLSTATE[25P02] … current transaction is aborted`.
    (Or use Render's free Postgres, but it is deleted after 30 days.)
-2. **App key.** Run `php artisan key:generate --show` locally (or `make shell` then the same
-   command) and copy the `base64:...` value. Never commit it.
+2. **App key.** Run `echo "base64:$(openssl rand -base64 32)"` in any terminal (macOS, Linux,
+   WSL) and copy the whole `base64:...` line. No PHP needed. With the Docker stack running,
+   `make shell` then `php artisan key:generate --show` gives the same kind of key. Never commit it.
 3. **Render.** Go to _New → Blueprint_, pick this repository, and Render reads `render.yaml`.
    When prompted, fill in:
     - `APP_KEY`: from step 2.
