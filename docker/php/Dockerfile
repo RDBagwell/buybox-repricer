@@ -4,7 +4,9 @@
 FROM node:22.22-bookworm-slim AS node
 
 # --- PHP-FPM base with the extensions the app needs
-FROM php:8.3-fpm-bookworm AS base
+# Pinned to a PHP patch release so a rebuild never silently changes PHP;
+# 8.3.36 is the minimum for CVE-2026-109618/109619. Bump it by hand.
+FROM php:8.3.36-fpm-bookworm AS base
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git unzip libpq-dev libicu-dev libzip-dev \
